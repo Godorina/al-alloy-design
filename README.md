@@ -60,13 +60,22 @@ cd al-alloy-design
 
 ### 2.2 한 번에 설치
 
+권장 모델 Qwen3.8-27B(약 15GB)로 설치:
+
 ```bash
-./setup.sh --quant Q4_K_M
+./setup.sh --repo unsloth/Qwen3.8-27B-GGUF --quant Q4_K_M
 ```
 
-`--quant Q4_K_M` 은 모델을 더 작은 양자화로 받는 옵션입니다 (생략하면 llmfit 이 제안한 큰 양자화로 받습니다).
+- `--repo` 는 Hugging Face 의 GGUF 저장소를 직접 지정하는 옵션입니다 (이 모델은 llmfit 순위 목록에 나오지 않습니다).
+- `--quant Q4_K_M` 은 모델을 4비트 양자화로 받는 옵션입니다. 이 저장소에서는 `Qwen3.8-27B-UD-Q4_K_M.gguf` 한 파일이 선택됩니다.
 
-실행되는 일은 4단계입니다. 중간에 "Download which one? [1]" 이 나오면 번호를 입력합니다.
+가벼운 모델로 먼저 시험해 보려면 (설계 루프는 끝까지 돌지 않는 경우가 많습니다, 2.5 참고):
+
+```bash
+./setup.sh --quant Q4_K_M       # llmfit 순위에서 번호 선택 (예: Qwen3-4B)
+```
+
+실행되는 일은 4단계입니다. `--repo` 없이 실행하면 중간에 "Download which one? [1]" 이 나오고, 순위표의 번호를 입력합니다.
 
 | 순서 | 하는 일 | 걸리는 시간 |
 |---|---|---|
@@ -88,6 +97,7 @@ uv pip install --python .venv/bin/python -r requirements.txt
 .venv/bin/python llm/pick.py --list-only            # 순위만 보기
 .venv/bin/python llm/pick.py --quant Q4_K_M         # 번호를 골라 다운로드
 .venv/bin/python llm/pick.py --auto --quant Q4_K_M  # 묻지 않고 1순위 다운로드 (1순위는 큰 모델일 수 있으니 순위부터 확인)
+.venv/bin/python llm/pick.py --repo unsloth/Qwen3.8-27B-GGUF --quant Q4_K_M   # 권장: Qwen3.8-27B 직접 지정 (약 15GB)
 
 # (3) 모델 서버 켜기 (.env 가 자동으로 만들어짐)
 .venv/bin/python llm/serve.py start
@@ -97,7 +107,7 @@ uv pip install --python .venv/bin/python -r requirements.txt
 .venv/bin/python llm/selfcheck.py --agent           # 설계 전체 한 번 실행 (5~10분)
 ```
 
-`pick.py` 옵션: `--list-only`(순위만), `--auto`(1순위), `--quant Q4_K_M`(양자화 지정), `--top 8`(표시 개수).
+`pick.py` 옵션: `--list-only`(순위만), `--auto`(1순위), `--quant Q4_K_M`(양자화 지정), `--top 8`(표시 개수), `--repo 저장소`(llmfit 순위에 없는 모델을 직접 지정, `--quant` 필요).
 `serve.py start` 옵션: `--slots 2`(동시 요청 수), `--ctx-per-slot 49152`(슬롯당 컨텍스트), `--port 8080`, `--wait 300`(대기 초).
 
 ### 2.4 점검 결과 읽는 법
@@ -111,8 +121,8 @@ uv pip install --python .venv/bin/python -r requirements.txt
 ### 2.5 어떤 모델을 고를까
 
 - 가벼운 모델(4B 급): 설치·점검은 통과하지만 설계 루프가 끝까지 돌지 않는 경우가 대부분입니다.
-- 큰 모델(30B 급 MoE, Q4_K_M 약 17GB): 한 대의 Mac(48GB)에서 설계 전체가 3번 중 1번 성공했습니다. 실패해도 같은 명령을 다시 실행하면 됩니다.
-- 모델을 바꾸려면 `.venv/bin/python llm/serve.py stop` → `.venv/bin/python llm/pick.py --quant Q4_K_M` → `.venv/bin/python llm/serve.py start` 순서로 합니다.
+- **권장: Qwen3.8-27B** (`unsloth/Qwen3.8-27B-GGUF`, Q4_K_M 약 15GB). 이 저장소의 설계 루프를 만들고 검증할 때 쓴 모델이고, 품질 점검의 기준값(6xxx UTS 오차 약 23 MPa)도 이 모델입니다. 이 저장소의 서버 설정(`llm/serve.py`)으로 다시 돌려 확인한 것은 아니므로 먼저 `llm/selfcheck.py --agent` 로 점검하세요. 실패해도 같은 명령을 다시 실행하면 됩니다.
+- 모델을 바꾸려면 `.venv/bin/python llm/serve.py stop` → `.venv/bin/python llm/pick.py --repo unsloth/Qwen3.8-27B-GGUF --quant Q4_K_M` (또는 `llm/pick.py --quant Q4_K_M` 로 순위에서 선택) → `.venv/bin/python llm/serve.py start` 순서로 합니다.
 
 ## 3. 설계 실행
 

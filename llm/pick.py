@@ -5,6 +5,7 @@
   python llm/pick.py --auto         download the top pick without asking
   python llm/pick.py --list-only    only show the list
   python llm/pick.py --quant Q4_K_M download a smaller quantization than llmfit proposes
+  python llm/pick.py --repo unsloth/Qwen3.8-27B-GGUF --quant Q4_K_M   a model that is not in the llmfit list
 """
 from __future__ import annotations
 
@@ -90,8 +91,15 @@ def main() -> None:
     ap.add_argument("--auto", action="store_true")
     ap.add_argument("--list-only", action="store_true")
     ap.add_argument("--quant", help="download this quantization (e.g. Q4_K_M) instead of the one llmfit proposes")
+    ap.add_argument("--repo", help="Hugging Face GGUF repository to download directly, skipping the llmfit list (needs --quant)")
     args = ap.parse_args()
 
+    if args.repo:
+        if not args.quant:
+            die("--repo needs --quant, e.g. --repo unsloth/Qwen3.8-27B-GGUF --quant Q4_K_M")
+        ensure_llmfit()
+        download({"name": args.repo, "gguf_sources": [{"repo": args.repo}], "best_quant": args.quant, "params_b": 0}, args.quant)
+        return
     models = candidates(ensure_llmfit())[: args.top]
     if not models:
         die("llmfit found no GGUF model with tool use that fits this machine. Free memory or add RAM/VRAM.")
