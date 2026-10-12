@@ -39,7 +39,7 @@ from mcp.client.stdio import stdio_client
 ROOT = Path(__file__).resolve().parents[3]  # icl_design/
 SERVERS = ROOT / "src" / "mcp" / "servers"
 SKILLS_DIR = ROOT / "src" / "skills"  # <name>/SKILL.md with name/description frontmatter
-DEFAULT_SERVERS = ["papers", "web", "kg"]  # docs (context7) is opt-in: rarely needed for alloy chat
+DEFAULT_SERVERS = ["kg"]
 LLM = os.environ.get("LLM_BASE_URL", "http://127.0.0.1:8080") + "/v1/chat/completions"  # any OpenAI-compatible server
 LLM_MODEL = os.environ.get("LLM_MODEL", "local")
 MAX_STEPS = 12
