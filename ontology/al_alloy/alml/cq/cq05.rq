@@ -1,0 +1,13 @@
+# CQ5: What does a study conclude, with the quote and page that back each finding?
+# params: study=e:study-synthetic-1
+PREFIX ml: <https://w3id.org/alml#>
+PREFIX al: <https://w3id.org/al6xxx#>
+PREFIX e: <https://w3id.org/alml/entity/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX schema: <https://schema.org/>
+
+SELECT ?finding ?statement ?quote ?page ?reviewStatus WHERE {
+  ?study ml:hasFinding ?finding . ?finding ml:statement ?statement ; ml:hasEvidence ?ev .
+  ?ev ml:quote ?quote ; ml:page ?page .
+  OPTIONAL { ?study ml:reviewStatus ?reviewStatus }
+} ORDER BY ?finding

@@ -1,0 +1,11 @@
+# CQ8: Samples with both a UTS value and a corrosion test result.
+PREFIX al:   <https://w3id.org/al6xxx#>
+PREFIX qudt: <http://qudt.org/schema/qudt/>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+
+SELECT DISTINCT ?sample ?uts ?rating ?test WHERE {
+  ?sample al:hasPropertyValue ?s , ?c .
+  ?s al:propertyKind al:UTS ; qudt:numericValue ?uts .
+  ?c al:underTest ?test .
+  OPTIONAL { ?c al:ratingValue ?rating }
+} ORDER BY ?sample

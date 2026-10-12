@@ -1,0 +1,26 @@
+Title: Materials informatics approach to understand aluminum alloys
+Authors: Tamura, R. et al.
+Journal: Science and Technology of Advanced Materials (2020-7-29)
+DOI: https://doi.org/10.1080/14686996.2020.1791676
+Alloy: 5000/6000/7000계 가공용 Al 합금
+Task: 조성+열처리(temper) → 인장강도·항복강도·연신율 예측, MCMC 관계 추출
+ML model: 선형/Lasso, SVR, 랜덤포레스트, GP + MCMC
+Dataset: 합금 DB 수집 (예: 5000계 115건, 7000계 34건)
+Data source: 보충자료(SI) / 보충 CSV 3종 (T&F/figshare) + 코드 GitHub rtmr/IE-MCMC
+Data link: https://doi.org/10.1080/14686996.2020.1791676
+Download status: 완료
+Note: 보충 CSV 3종 + 보충 PDF + GitHub 코드(target.csv 포함)
+
+Files in data/:
+  - GitHub_rtmr__IE-MCMC.zip  (3.4 KB, zip ok (4 files))
+  - SupplementalInformation_sm4022.pdf  (2.2 MB, pdf ok)
+  - tsta_a_1791676_sm7401.csv  (1.8 KB, ok)
+  - tsta_a_1791676_sm7404.csv  (2.3 KB, ok)
+  - tsta_a_1791676_sm7407.csv  (7.6 KB, ok)
+
+Notes for the ontology converter (ontology/al_alloy/al6xxx/convert/build_kg.py):
+- sm7404 = 6000 series, sm7401 = 7000 series, sm7407 = 5000 series (temper H X n).
+- X = temper designation T X for 6000/7000 (SI Table S2); compositions and properties are standard/handbook
+  values (nominal), not measurements.
+- ID = "A <grade> <JIS product code>": P plate/sheet (JIS H 4000), BE extruded bar, BD drawn bar (H 4040),
+  S extruded shape (H 4100), FH forging (H 4140).

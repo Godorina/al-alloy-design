@@ -1,0 +1,6 @@
+# CQ10: Which items does each source not report in its text or tables?
+PREFIX al:   <https://w3id.org/al6xxx#>
+PREFIX qudt: <http://qudt.org/schema/qudt/>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+
+SELECT ?source ?item WHERE { ?source al:notReported ?item } ORDER BY ?source ?item

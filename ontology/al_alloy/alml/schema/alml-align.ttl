@@ -1,0 +1,11 @@
+# alml v0.1.0 - links to W3C ML-Schema (http://www.w3.org/ns/mls#), skos matches only (no owl:imports).
+@prefix ml:   <https://w3id.org/alml#> .
+@prefix mls:  <http://www.w3.org/ns/mls#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+ml:Task skos:closeMatch mls:Task .
+ml:Dataset skos:closeMatch mls:Dataset .
+ml:Model skos:closeMatch mls:Model .
+ml:Score skos:closeMatch mls:ModelEvaluation .
+ml:metric skos:closeMatch mls:specifiedBy .
+ml:AlgorithmScheme skos:closeMatch mls:Algorithm .

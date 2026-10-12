@@ -1,0 +1,15 @@
+# CQ4: Alloys with several artificially aged samples: ageing temperature, time and UTS (ageing curves).
+PREFIX al:   <https://w3id.org/al6xxx#>
+PREFIX qudt: <http://qudt.org/schema/qudt/>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+
+SELECT ?alloy ?sample ?ageC ?ageH ?uts WHERE {
+  { SELECT ?alloy WHERE {
+      ?s al:ofAlloy ?alloy ; al:hasProcessStep/al:stepType al:ArtificialAgeing .
+    } GROUP BY ?alloy HAVING (COUNT(DISTINCT ?s) >= 2) }
+  ?sample al:ofAlloy ?alloy ; al:hasProcessStep ?st ; al:hasPropertyValue ?v .
+  ?st al:stepType al:ArtificialAgeing .
+  OPTIONAL { ?st al:temperatureC ?ageC }
+  OPTIONAL { ?st al:durationH ?ageH }
+  ?v al:propertyKind al:UTS ; qudt:numericValue ?uts .
+} ORDER BY ?alloy ?ageC ?ageH

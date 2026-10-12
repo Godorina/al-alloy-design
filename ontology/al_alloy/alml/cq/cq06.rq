@@ -1,0 +1,8 @@
+# CQ6: Which studies validated their predictions with new measurements (candidates for measured-value extraction)?
+PREFIX ml: <https://w3id.org/alml#>
+PREFIX al: <https://w3id.org/al6xxx#>
+PREFIX e: <https://w3id.org/alml/entity/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX schema: <https://schema.org/>
+
+SELECT ?study ?title WHERE { ?study ml:experimentallyValidated true ; schema:name ?title } ORDER BY ?study

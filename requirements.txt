@@ -1,0 +1,14 @@
+# Python 3.11 - 3.13. Versions are the ones the saved CatBoost / ExtraTrees models were trained with.
+numpy==2.4.6
+scipy==1.17.1
+pandas==3.0.6
+pyarrow==25.0.1
+scikit-learn==1.5.2
+catboost==1.2.10
+joblib==1.6.0
+httpx==0.28.1
+mcp==1.30.0
+rdflib==7.6.0
+pyoxigraph==0.5.11
+owlrl==7.6.2
+pyshacl==0.40.1

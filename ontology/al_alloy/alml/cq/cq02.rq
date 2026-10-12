@@ -1,0 +1,11 @@
+# CQ2: Which kinds of input features were used to predict a property, and by how many studies?
+# params: property=al:UTS
+PREFIX ml: <https://w3id.org/alml#>
+PREFIX al: <https://w3id.org/al6xxx#>
+PREFIX e: <https://w3id.org/alml/entity/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX schema: <https://schema.org/>
+
+SELECT ?feature (COUNT(DISTINCT ?study) AS ?studies) WHERE {
+  ?study ml:hasTask ?t . ?t ml:targetProperty ?property ; ml:usesFeature ?feature .
+} GROUP BY ?feature ORDER BY DESC(?studies) ?feature

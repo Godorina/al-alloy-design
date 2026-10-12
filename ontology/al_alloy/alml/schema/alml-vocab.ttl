@@ -1,0 +1,221 @@
+# alml vocabularies (SKOS) v0.2.0: task types, input feature kinds, algorithms, metrics, data sources.
+# Target properties and alloy series are in ../../common/vocab.ttl (shared with al6xxx).
+
+@prefix ml:   <https://w3id.org/alml#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+ml:TaskTypeScheme a skos:ConceptScheme ;
+    rdfs:label "Task types"@en , "과제 종류"@ko .
+
+ml:Regression a skos:Concept ; skos:inScheme ml:TaskTypeScheme ;
+    skos:prefLabel "Regression"@en , "회귀"@ko ;
+    skos:definition "Predict a numeric property."@en , "수치 물성을 예측한다."@ko .
+ml:Classification a skos:Concept ; skos:inScheme ml:TaskTypeScheme ;
+    skos:prefLabel "Classification"@en , "분류"@ko ;
+    skos:definition "Predict a category (e.g. corrosion grade, pitting or not)."@en , "범주를 예측한다(예: 부식 등급, 피팅 여부)."@ko .
+ml:InverseDesign a skos:Concept ; skos:inScheme ml:TaskTypeScheme ;
+    skos:prefLabel "Inverse design"@en , "역설계"@ko ;
+    skos:definition "Search compositions or processes that reach a target property."@en , "목표 물성에 이르는 조성이나 공정을 찾는다."@ko .
+ml:Optimization a skos:Concept ; skos:inScheme ml:TaskTypeScheme ;
+    skos:prefLabel "Process optimization"@en , "공정 최적화"@ko ;
+    skos:definition "Tune process parameters for a target, e.g. by Bayesian optimization."@en , "베이지안 최적화 등으로 목표에 맞게 공정 변수를 조정한다."@ko .
+ml:Segmentation a skos:Concept ; skos:inScheme ml:TaskTypeScheme ;
+    skos:prefLabel "Image segmentation"@en , "이미지 분할"@ko ;
+    skos:definition "Label phases, pores or defects in micrographs."@en , "조직 사진의 상·기공·결함을 구분한다."@ko .
+ml:InteratomicPotential a skos:Concept ; skos:inScheme ml:TaskTypeScheme ;
+    skos:prefLabel "Interatomic potential"@en , "원자간 퍼텐셜"@ko ;
+    skos:definition "Fit energies and forces from DFT for atomistic simulation."@en , "원자 모사를 위해 DFT 에너지·힘을 맞춘다."@ko .
+ml:Interpretation a skos:Concept ; skos:inScheme ml:TaskTypeScheme ;
+    skos:prefLabel "Interpretation"@en , "해석"@ko ;
+    skos:definition "Extract relations or feature importance from a trained model, e.g. by MCMC sampling."@en , "학습한 모델에서 관계나 특징 중요도를 뽑는다. 예: MCMC 샘플링."@ko .
+ml:Clustering a skos:Concept ; skos:inScheme ml:TaskTypeScheme ;
+    skos:prefLabel "Clustering"@en , "군집화"@ko ;
+    skos:definition "Group alloys without labels."@en , "레이블 없이 합금을 묶는다."@ko .
+
+ml:FeatureKindScheme a skos:ConceptScheme ;
+    rdfs:label "Input feature kinds"@en , "입력 특징 종류"@ko .
+
+ml:Composition a skos:Concept ; skos:inScheme ml:FeatureKindScheme ;
+    skos:prefLabel "Composition"@en , "조성"@ko ;
+    skos:definition "Element contents of the alloy."@en , "합금의 원소 함량."@ko .
+ml:Processing a skos:Concept ; skos:inScheme ml:FeatureKindScheme ;
+    skos:prefLabel "Processing"@en , "공정"@ko ;
+    skos:definition "Heat treatment, temper, forming or printing parameters."@en , "열처리, 템퍼, 성형·적층 변수."@ko .
+ml:Microstructure a skos:Concept ; skos:inScheme ml:FeatureKindScheme ;
+    skos:prefLabel "Microstructure"@en , "미세조직"@ko ;
+    skos:definition "Measured microstructure quantities (grain size, phase fractions ...)."@en , "측정한 미세조직 값(결정립 크기, 상 분율 등)."@ko .
+ml:ComputedDescriptor a skos:Concept ; skos:inScheme ml:FeatureKindScheme ;
+    skos:prefLabel "Computed descriptor"@en , "계산 기술자"@ko ;
+    skos:definition "Quantities from DFT, CALPHAD or physics models."@en , "DFT, CALPHAD, 물리 모델로 계산한 값."@ko .
+ml:MolecularDescriptor a skos:Concept ; skos:inScheme ml:FeatureKindScheme ;
+    skos:prefLabel "Molecular descriptor"@en , "분자 기술자"@ko ;
+    skos:definition "Descriptors of inhibitor molecules."@en , "부식 억제제 분자의 기술자."@ko .
+ml:Image a skos:Concept ; skos:inScheme ml:FeatureKindScheme ;
+    skos:prefLabel "Image"@en , "이미지"@ko ;
+    skos:definition "Micrographs, surface images or tomography."@en , "조직 사진, 표면 이미지, 단층 촬영."@ko .
+ml:Environment a skos:Concept ; skos:inScheme ml:FeatureKindScheme ;
+    skos:prefLabel "Environment"@en , "환경"@ko ;
+    skos:definition "Service or test environment (medium, temperature, humidity, pollutants)."@en , "사용·시험 환경(매질, 온도, 습도, 오염물)."@ko .
+ml:TestCondition a skos:Concept ; skos:inScheme ml:FeatureKindScheme ;
+    skos:prefLabel "Test condition"@en , "시험 조건"@ko ;
+    skos:definition "Test parameters such as strain rate, orientation or load."@en , "변형률 속도, 방향, 하중 같은 시험 변수."@ko .
+
+ml:AlgorithmScheme a skos:ConceptScheme ;
+    rdfs:label "Machine-learning algorithms"@en , "머신러닝 알고리즘"@ko .
+
+ml:LinearRegression a skos:Concept ; skos:inScheme ml:AlgorithmScheme ;
+    skos:prefLabel "Linear or regularized regression"@en , "선형·규제 회귀"@ko ;
+    skos:definition "Linear, ridge or lasso regression."@en , "선형, 릿지, 라쏘 회귀."@ko .
+ml:RandomForest a skos:Concept ; skos:inScheme ml:AlgorithmScheme ;
+    skos:prefLabel "Random forest"@en , "랜덤 포레스트"@ko ;
+    skos:definition "Ensemble of decision trees by bagging."@en , "배깅한 결정 트리 앙상블."@ko .
+ml:GradientBoosting a skos:Concept ; skos:inScheme ml:AlgorithmScheme ;
+    skos:prefLabel "Gradient boosting"@en , "그래디언트 부스팅"@ko ;
+    skos:definition "Boosted trees such as XGBoost, LightGBM or GBR."@en , "XGBoost, LightGBM, GBR 같은 부스팅 트리."@ko .
+ml:GaussianProcess a skos:Concept ; skos:inScheme ml:AlgorithmScheme ;
+    skos:prefLabel "Gaussian process"@en , "가우시안 프로세스"@ko ;
+    skos:definition "Gaussian process regression or classification."@en , "가우시안 프로세스 회귀·분류."@ko .
+ml:SupportVectorRegression a skos:Concept ; skos:inScheme ml:AlgorithmScheme ;
+    skos:prefLabel "Support vector machine"@en , "서포트 벡터 머신"@ko ;
+    skos:definition "Support vector regression or classification."@en , "서포트 벡터 회귀·분류."@ko .
+ml:KNearestNeighbours a skos:Concept ; skos:inScheme ml:AlgorithmScheme ;
+    skos:prefLabel "k-nearest neighbours"@en , "k-최근접 이웃"@ko ;
+    skos:definition "Prediction from the nearest training points."@en , "가장 가까운 학습 데이터로 예측한다."@ko .
+ml:NeuralNetwork a skos:Concept ; skos:inScheme ml:AlgorithmScheme ;
+    skos:prefLabel "Neural network"@en , "신경망"@ko ;
+    skos:definition "Fully connected (MLP) or recurrent networks."@en , "완전 연결(MLP)·순환 신경망."@ko .
+ml:ConvolutionalNetwork a skos:Concept ; skos:inScheme ml:AlgorithmScheme ;
+    skos:prefLabel "Convolutional network"@en , "합성곱 신경망"@ko ;
+    skos:definition "CNNs and U-Nets for images."@en , "이미지용 CNN, U-Net."@ko .
+ml:NeuralNetworkPotential a skos:Concept ; skos:inScheme ml:AlgorithmScheme ;
+    skos:prefLabel "Neural-network potential"@en , "신경망 퍼텐셜"@ko ;
+    skos:definition "Neural networks fitted to atomistic energies and forces."@en , "원자 에너지·힘에 맞춘 신경망."@ko .
+ml:BayesianOptimization a skos:Concept ; skos:inScheme ml:AlgorithmScheme ;
+    skos:prefLabel "Bayesian optimization / active learning"@en , "베이지안 최적화·능동 학습"@ko ;
+    skos:definition "Sequential design with a surrogate model and an acquisition function."@en , "대리 모델과 획득 함수로 다음 실험을 고르는 순차 설계."@ko .
+ml:GeneticAlgorithm a skos:Concept ; skos:inScheme ml:AlgorithmScheme ;
+    skos:prefLabel "Genetic algorithm"@en , "유전 알고리즘"@ko ;
+    skos:definition "Evolutionary search used to fit or optimize a model."@en , "모델 학습이나 최적화에 쓰는 진화 탐색."@ko .
+ml:MCMC a skos:Concept ; skos:inScheme ml:AlgorithmScheme ;
+    skos:prefLabel "Markov chain Monte Carlo"@en , "마르코프 연쇄 몬테카를로"@ko ;
+    skos:definition "Sampling over a model or posterior, e.g. to extract relations."@en , "모델이나 사후분포 위의 샘플링. 예: 관계 추출."@ko .
+ml:ClusteringAlgorithm a skos:Concept ; skos:inScheme ml:AlgorithmScheme ;
+    skos:prefLabel "Clustering algorithm"@en , "군집 알고리즘"@ko ;
+    skos:definition "k-means, hierarchical or density-based clustering."@en , "k-평균, 계층, 밀도 기반 군집."@ko .
+
+ml:MetricScheme a skos:ConceptScheme ;
+    rdfs:label "Evaluation metrics"@en , "평가 지표"@ko .
+
+ml:R2 a skos:Concept ; skos:inScheme ml:MetricScheme ;
+    skos:prefLabel "Coefficient of determination (R2)"@en , "결정계수(R2)"@ko ;
+    skos:definition "Higher is better."@en , "높을수록 좋다."@ko .
+ml:RMSE a skos:Concept ; skos:inScheme ml:MetricScheme ;
+    skos:prefLabel "Root mean squared error"@en , "평균 제곱근 오차"@ko ;
+    skos:definition "Lower is better; in the unit of the target."@en , "낮을수록 좋다. 목표와 같은 단위."@ko .
+ml:MAE a skos:Concept ; skos:inScheme ml:MetricScheme ;
+    skos:prefLabel "Mean absolute error"@en , "평균 절대 오차"@ko ;
+    skos:definition "Lower is better; in the unit of the target."@en , "낮을수록 좋다. 목표와 같은 단위."@ko .
+ml:MSE a skos:Concept ; skos:inScheme ml:MetricScheme ;
+    skos:prefLabel "Mean squared error"@en , "평균 제곱 오차"@ko ;
+    skos:definition "Lower is better; in the squared unit of the target."@en , "낮을수록 좋다. 목표 단위의 제곱."@ko .
+ml:MAPE a skos:Concept ; skos:inScheme ml:MetricScheme ;
+    skos:prefLabel "Mean absolute percentage error"@en , "평균 절대 백분율 오차"@ko ;
+    skos:definition "Lower is better; in %."@en , "낮을수록 좋다. 단위 %."@ko .
+ml:Accuracy a skos:Concept ; skos:inScheme ml:MetricScheme ;
+    skos:prefLabel "Accuracy"@en , "정확도"@ko ;
+    skos:definition "Higher is better; fraction or % of correct classes."@en , "높을수록 좋다. 맞힌 비율(분율 또는 %)."@ko .
+ml:F1 a skos:Concept ; skos:inScheme ml:MetricScheme ;
+    skos:prefLabel "F1 score"@en , "F1 점수"@ko ;
+    skos:definition "Higher is better."@en , "높을수록 좋다."@ko .
+
+ml:DataSourceScheme a skos:ConceptScheme ;
+    rdfs:label "Data sources"@en , "데이터 출처"@ko .
+
+ml:Experiment a skos:Concept ; skos:inScheme ml:DataSourceScheme ;
+    skos:prefLabel "Own experiments"@en , "자체 실험"@ko ;
+    skos:definition "Measured by the authors for the study."@en , "저자가 연구를 위해 측정했다."@ko .
+ml:Literature a skos:Concept ; skos:inScheme ml:DataSourceScheme ;
+    skos:prefLabel "Literature compilation"@en , "문헌 수집"@ko ;
+    skos:definition "Collected from published papers."@en , "출판 논문에서 모았다."@ko .
+ml:Handbook a skos:Concept ; skos:inScheme ml:DataSourceScheme ;
+    skos:prefLabel "Handbook or database"@en , "핸드북·데이터베이스"@ko ;
+    skos:definition "Standards and handbooks."@en , "규격과 핸드북."@ko .
+ml:Database a skos:Concept ; skos:inScheme ml:DataSourceScheme ;
+    skos:prefLabel "Materials database"@en , "재료 데이터베이스"@ko ;
+    skos:definition "A commercial or public materials database (e.g. Total Materia, MatWeb, NIMS)."@en , "상용·공개 재료 DB(예: Total Materia, MatWeb, NIMS)."@ko .
+ml:Simulation a skos:Concept ; skos:inScheme ml:DataSourceScheme ;
+    skos:prefLabel "Simulation"@en , "시뮬레이션"@ko ;
+    skos:definition "Computed by DFT, CALPHAD, FEM or other simulation."@en , "DFT, CALPHAD, FEM 등으로 계산했다."@ko .
+
+ml:EvaluationScheme a skos:ConceptScheme ;
+    rdfs:label "Evaluation data"@en , "평가 데이터"@ko .
+
+ml:Test a skos:Concept ; skos:inScheme ml:EvaluationScheme ;
+    skos:prefLabel "Held-out test set"@en , "시험 세트"@ko ;
+    skos:definition "Data held out from training, from the same source."@en , "같은 출처에서 학습에 쓰지 않고 떼어 둔 데이터."@ko .
+ml:CrossValidation a skos:Concept ; skos:inScheme ml:EvaluationScheme ;
+    skos:prefLabel "Cross-validation"@en , "교차 검증"@ko ;
+    skos:definition "k-fold, leave-one-out or grouped (leave-one-composition-out) cross-validation."@en , "k-겹, 하나 빼기, 그룹(조성 하나 빼기) 교차 검증."@ko .
+ml:External a skos:Concept ; skos:inScheme ml:EvaluationScheme ;
+    skos:prefLabel "External validation"@en , "외부 검증"@ko ;
+    skos:definition "New experiments or another dataset not used in model building."@en , "모델을 만들 때 쓰지 않은 새 실험이나 다른 데이터."@ko .
+
+ml:GaussianProcess skos:altLabel "Kriging" .
+ml:LinearRegression skos:altLabel "Ridge" , "Lasso" , "Elastic net" .
+ml:GradientBoosting skos:altLabel "XGBoost" , "LightGBM" , "CatBoost" .
+
+# v0.3: gaps found extracting the 53 ML papers
+ml:DecisionTree a skos:Concept ; skos:inScheme ml:AlgorithmScheme ;
+    skos:prefLabel "Decision tree"@en , "결정 트리"@ko ;
+    skos:definition "A single decision or regression tree."@en , "단일 결정·회귀 트리."@ko .
+ml:AdaBoost a skos:Concept ; skos:inScheme ml:AlgorithmScheme ;
+    skos:prefLabel "AdaBoost"@en , "AdaBoost"@ko ;
+    skos:definition "Adaptive boosting of weak learners."@en , "약한 학습기를 가중치로 이어 붙이는 부스팅."@ko .
+ml:ResponseSurface a skos:Concept ; skos:inScheme ml:AlgorithmScheme ;
+    skos:prefLabel "Response surface (polynomial)"@en , "반응표면(다항식)"@ko ;
+    skos:definition "A polynomial regression over designed experiments (RSM)."@en , "실험계획 위의 다항 회귀(RSM)."@ko .
+ml:LogisticRegression a skos:Concept ; skos:inScheme ml:AlgorithmScheme ;
+    skos:prefLabel "Logistic regression"@en , "로지스틱 회귀"@ko ;
+    skos:definition "A linear classifier."@en , "선형 분류기."@ko .
+ml:ParticleSwarm a skos:Concept ; skos:inScheme ml:AlgorithmScheme ;
+    skos:prefLabel "Particle swarm optimisation"@en , "입자 군집 최적화"@ko ;
+    skos:definition "Population search over the design space (PSO)."@en , "설계 공간의 개체군 탐색(PSO)."@ko .
+ml:Ensemble a skos:Concept ; skos:inScheme ml:AlgorithmScheme ;
+    skos:prefLabel "Mixed ensemble"@en , "혼합 앙상블"@ko ;
+    skos:definition "Stacking, voting or bagging over models of different kinds; its score belongs to the ensemble."@en , "서로 다른 모델을 쌓거나 투표·배깅한 것. 점수는 앙상블 전체의 것."@ko .
+ml:PCC a skos:Concept ; skos:inScheme ml:MetricScheme ;
+    skos:prefLabel "Pearson correlation coefficient"@en , "피어슨 상관계수"@ko ;
+    skos:definition "Higher is better; r, not R2."@en , "높을수록 좋다. R2가 아닌 r."@ko .
+ml:AUC a skos:Concept ; skos:inScheme ml:MetricScheme ;
+    skos:prefLabel "Area under the ROC curve"@en , "ROC 곡선 아래 면적"@ko ;
+    skos:definition "Higher is better."@en , "높을수록 좋다."@ko .
+ml:BalancedAccuracy a skos:Concept ; skos:inScheme ml:MetricScheme ;
+    skos:prefLabel "Balanced accuracy"@en , "균형 정확도"@ko ;
+    skos:definition "Mean recall over classes; higher is better."@en , "클래스별 재현율 평균. 높을수록 좋다."@ko .
+ml:Precision a skos:Concept ; skos:inScheme ml:MetricScheme ;
+    skos:prefLabel "Precision"@en , "정밀도"@ko ;
+    skos:definition "Higher is better."@en , "높을수록 좋다."@ko .
+ml:Recall a skos:Concept ; skos:inScheme ml:MetricScheme ;
+    skos:prefLabel "Recall (sensitivity)"@en , "재현율(민감도)"@ko ;
+    skos:definition "Higher is better."@en , "높을수록 좋다."@ko .
+ml:NRMSE a skos:Concept ; skos:inScheme ml:MetricScheme ;
+    skos:prefLabel "Normalised RMSE"@en , "정규화 RMSE"@ko ;
+    skos:definition "RMSE divided by the range or mean; lower is better."@en , "범위나 평균으로 나눈 RMSE. 낮을수록 좋다."@ko .
+ml:IoU a skos:Concept ; skos:inScheme ml:MetricScheme ;
+    skos:prefLabel "Intersection over union"@en , "IoU"@ko ;
+    skos:definition "Overlap of predicted and true regions; higher is better."@en , "예측·정답 영역의 겹침. 높을수록 좋다."@ko .
+ml:MechanicalProperty a skos:Concept ; skos:inScheme ml:FeatureKindScheme ;
+    skos:prefLabel "Mechanical properties"@en , "기계적 성질"@ko ;
+    skos:definition "Measured properties used as inputs (e.g. UTS to predict conductivity)."@en , "입력으로 쓴 측정 성질(예: 전도도 예측에 쓴 UTS)."@ko .
+ml:Geometry a skos:Concept ; skos:inScheme ml:FeatureKindScheme ;
+    skos:prefLabel "Geometry"@en , "형상"@ko ;
+    skos:definition "Part, die, coating or defect geometry."@en , "부품·금형·코팅·결함의 형상."@ko .
+ml:Signal a skos:Concept ; skos:inScheme ml:FeatureKindScheme ;
+    skos:prefLabel "Signal features"@en , "신호 특징"@ko ;
+    skos:definition "Features from sensor signals or curves (acoustic, stress-strain, impedance)."@en , "센서 신호나 곡선(음향, 응력-변형률, 임피던스)에서 뽑은 특징."@ko .
+ml:Industrial a skos:Concept ; skos:inScheme ml:DataSourceScheme ;
+    skos:prefLabel "Industrial"@en , "산업 데이터"@ko ;
+    skos:definition "Production or company data."@en , "생산 현장·회사 데이터."@ko .
+ml:RandomForest skos:altLabel "Extra trees" .
+ml:ClusteringAlgorithm skos:altLabel "Gaussian mixture" .

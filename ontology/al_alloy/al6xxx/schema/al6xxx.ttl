@@ -1,0 +1,279 @@
+# al6xxx ontology v0.1.0 — schema (classes and properties).
+# Scope: CQ1-CQ11 in docs/cq.md. Every term below serves at least one CQ (noted per term).
+# Controlled vocabularies (tempers, step types, routes, heating methods, property kinds) live in ../../common/vocab.ttl;
+# links to external ontologies (TTO, QUDT, PMDco) are skos matches in al6xxx-align.ttl.
+
+@prefix al:      <https://w3id.org/al6xxx#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix schema:  <https://schema.org/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix qudt:    <http://qudt.org/schema/qudt/> .
+
+<https://w3id.org/al6xxx> a owl:Ontology ;
+    dcterms:title "Aluminium alloy ontology"@en , "알루미늄 합금 온톨로지"@ko ;
+    dcterms:description "Composition, processing, measured properties and literature provenance of aluminium alloys of every series (2xxx-7xxx, Al-Li, cast Al-Si); 6xxx is the most complete."@en ,
+        "모든 계열(2xxx-7xxx, Al-Li, Al-Si 주조) 알루미늄 합금의 조성, 공정, 측정 물성, 문헌 출처를 표현한다. 6xxx가 가장 자세하다."@ko ;
+    owl:versionInfo "0.5.0" .
+
+###############################################################################
+# Classes
+###############################################################################
+
+al:Alloy a owl:Class ;                                   # CQ1, CQ2, CQ4
+    rdfs:label "Alloy"@en , "합금"@ko ;
+    rdfs:comment "An alloy identified by one chemical composition (optionally a standard designation such as AA6061)."@en ,
+        "화학 조성 하나로 식별되는 합금. 선택적으로 규격명(AA6061 등)을 가진다."@ko .
+
+al:ElementContent a owl:Class ;                          # CQ1
+    rdfs:label "Element content"@en , "원소 함량"@ko ;
+    rdfs:comment "The mass percent of one element in an alloy. Aluminium is the balance and is not recorded."@en ,
+        "합금에 들어 있는 원소 하나의 질량 백분율. 알루미늄은 잔부라 기록하지 않는다."@ko .
+
+al:Sample a owl:Class ;                                  # CQ1-CQ8
+    rdfs:subClassOf prov:Entity ;
+    rdfs:label "Sample"@en , "시료"@ko ;
+    rdfs:comment "Material of one alloy in one temper after one processing history; the thing whose properties are reported."@en ,
+        "한 합금이 하나의 공정 이력을 거쳐 한 템퍼 상태가 된 재료. 물성은 시료에 붙는다."@ko .
+
+al:ProcessStep a owl:Class ;                             # CQ3, CQ4, CQ5
+    rdfs:subClassOf prov:Activity ;
+    rdfs:label "Process step"@en , "공정 단계"@ko ;
+    rdfs:comment "One step of a sample's processing history, typed by al:stepType and ordered by al:stepIndex."@en ,
+        "시료 공정 이력의 한 단계. 종류는 al:stepType, 순서는 al:stepIndex로 나타낸다."@ko .
+
+al:PropertyValue a owl:Class ;                           # CQ6, CQ7, CQ8
+    rdfs:subClassOf prov:Entity ;
+    rdfs:label "Property value"@en , "물성값"@ko ;
+    rdfs:comment "One value of one property of a sample: numeric (qudt:numericValue + qudt:unit) or a rating (al:ratingValue)."@en ,
+        "시료의 물성 하나에 대한 값 하나. 수치(qudt:numericValue + qudt:unit) 또는 등급(al:ratingValue)."@ko .
+
+al:MeasuredValue a owl:Class ;                           # CQ6, CQ7
+    rdfs:subClassOf al:PropertyValue ;
+    rdfs:label "Measured value"@en , "실측값"@ko ;
+    rdfs:comment "A value obtained by testing the sample."@en , "시료를 실제로 시험해서 얻은 값."@ko .
+
+al:NominalValue a owl:Class ;                            # CQ8
+    rdfs:subClassOf al:PropertyValue ;
+    rdfs:label "Nominal value"@en , "공칭값"@ko ;
+    rdfs:comment "A typical or specification value for a grade and temper, not a test of this sample."@en ,
+        "규격이나 대표값. 이 시료를 시험한 결과가 아니다."@ko .
+
+al:PredictedValue a owl:Class ;                          # CQ7
+    rdfs:subClassOf al:PropertyValue ;
+    rdfs:label "Predicted value"@en , "예측값"@ko ;
+    rdfs:comment "A value produced by a model (ML surrogate or in-context learning); prov:wasGeneratedBy names the run, prov:used its inputs."@en ,
+        "모델(ML 대리모델 또는 ICL)이 만든 값. prov:wasGeneratedBy로 실행을, prov:used로 입력을 가리킨다."@ko .
+
+[] a owl:AllDisjointClasses ; owl:members ( al:MeasuredValue al:NominalValue al:PredictedValue ) .
+
+al:CorrosionTest a owl:Class ;                           # CQ8
+    rdfs:subClassOf prov:Activity ;
+    rdfs:label "Corrosion test"@en , "부식 시험"@ko ;
+    rdfs:comment "One corrosion test of a sample (method, medium and reference electrode as reported), linked only to the values it produced (rating, rate, potential, current density, polarization resistance, depth, SCC index). A sample may have several."@en ,
+        "시료 하나의 부식 시험(보고된 방법, 용액, 기준전극). 그 시험이 낸 값(등급, 속도, 전위, 전류밀도, 분극 저항, 깊이, SCC 지수)에만 연결된다. 시료당 여러 개일 수 있다."@ko .
+
+al:Evidence a owl:Class ;                                # CQ9
+    rdfs:subClassOf prov:Entity ;
+    rdfs:label "Evidence"@en , "근거"@ko ;
+    rdfs:comment "A verbatim quote on a page of a source that backs a value, with its human review status."@en ,
+        "값을 뒷받침하는 출처의 페이지와 원문 인용, 그리고 사람의 검수 상태."@ko .
+
+###############################################################################
+# Object properties
+###############################################################################
+
+al:ofAlloy a owl:ObjectProperty , owl:FunctionalProperty ;   # CQ1, CQ2, CQ4
+    rdfs:domain al:Sample ; rdfs:range al:Alloy ;
+    rdfs:label "of alloy"@en , "합금"@ko ;
+    rdfs:comment "The alloy the sample is made of."@en , "시료를 이루는 합금."@ko .
+
+al:hasConstituent a owl:ObjectProperty ;                 # CQ1
+    rdfs:domain al:Alloy ; rdfs:range al:ElementContent ;
+    rdfs:label "has constituent"@en , "구성 원소"@ko ;
+    rdfs:comment "An element content of the alloy."@en , "합금의 원소 함량."@ko .
+
+al:hasTemper a owl:ObjectProperty , owl:FunctionalProperty ; # CQ1, CQ5, CQ6
+    rdfs:domain al:Sample ; rdfs:range skos:Concept ;
+    rdfs:seeAlso al:TemperScheme ;  # values come from this scheme
+    rdfs:label "has temper"@en , "템퍼"@ko ;
+    rdfs:comment "The temper designation of the sample, a concept of al:TemperScheme."@en ,
+        "시료의 템퍼 기호. al:TemperScheme의 개념이다."@ko .
+
+al:hasRoute a owl:ObjectProperty ;                       # CQ1
+    rdfs:domain al:Sample ; rdfs:range skos:Concept ;
+    rdfs:seeAlso al:RouteScheme ;  # values come from this scheme
+    rdfs:label "has route"@en , "가공 방식"@ko ;
+    rdfs:comment "The product form or forming route (al:RouteScheme). Omitted when not reported."@en ,
+        "제품 형태나 가공 방식(al:RouteScheme). 보고되지 않았으면 생략한다."@ko .
+
+al:hasProcessStep a owl:ObjectProperty ;                 # CQ3, CQ4, CQ5
+    rdfs:domain al:Sample ; rdfs:range al:ProcessStep ;
+    rdfs:label "has process step"@en , "공정 단계"@ko ;
+    rdfs:comment "A reported step of the sample's processing history. An absent step means not reported, unless the temper does not imply it."@en ,
+        "시료 공정 이력 가운데 보고된 단계. 템퍼가 요구하는데 없는 단계는 미보고로 본다."@ko .
+
+al:stepType a owl:ObjectProperty , owl:FunctionalProperty ;  # CQ3, CQ5
+    rdfs:domain al:ProcessStep ; rdfs:range skos:Concept ;
+    rdfs:seeAlso al:StepTypeScheme ;  # values come from this scheme
+    rdfs:label "step type"@en , "단계 종류"@ko ;
+    rdfs:comment "The kind of the step, a concept of al:StepTypeScheme."@en , "단계의 종류. al:StepTypeScheme의 개념이다."@ko .
+
+al:heatingMethod a owl:ObjectProperty , owl:FunctionalProperty ;  # CQ3 (same schedule, different heating)
+    rdfs:domain al:ProcessStep ; rdfs:range skos:Concept ;
+    rdfs:seeAlso al:HeatingScheme ;  # values come from this scheme
+    rdfs:label "heating method"@en , "가열 방식"@ko ;
+    rdfs:comment "How the step was heated, when the source says so (al:HeatingScheme)."@en ,
+        "출처가 밝힌 경우, 단계의 가열 방식(al:HeatingScheme)."@ko .
+
+al:inSeries a owl:ObjectProperty , owl:FunctionalProperty ;  # CQ6 (strong samples of one series)
+    rdfs:domain al:Alloy ; rdfs:range skos:Concept ;
+    rdfs:seeAlso al:SeriesScheme ;  # values come from this scheme
+    rdfs:label "in series"@en , "합금 계열"@ko ;
+    rdfs:comment "The alloy family (al:SeriesScheme) as the source classifies it; left out when the source says other."@en ,
+        "출처가 분류한 합금 계열(al:SeriesScheme). 출처가 기타로 분류하면 두지 않는다."@ko .
+
+al:impliesStepType a owl:ObjectProperty ;                # CQ5
+    rdfs:domain skos:Concept ; rdfs:range skos:Concept ;
+    rdfs:label "implies step type"@en , "필요 단계"@ko ;
+    rdfs:comment "A step type that a temper designation requires by definition; used to tell unreported steps from steps not performed."@en ,
+        "템퍼 정의상 반드시 거친 단계 종류. 미보고 단계와 하지 않은 단계를 구분하는 데 쓴다."@ko .
+
+al:hasPropertyValue a owl:ObjectProperty ;               # CQ6, CQ7, CQ8
+    rdfs:domain al:Sample ; rdfs:range al:PropertyValue ;
+    rdfs:label "has property value"@en , "물성값"@ko ;
+    rdfs:comment "A property value reported or predicted for the sample."@en , "시료에 대해 보고되거나 예측된 물성값."@ko .
+
+al:propertyKind a owl:ObjectProperty , owl:FunctionalProperty ;  # CQ6, CQ8
+    rdfs:domain al:PropertyValue ; rdfs:range skos:Concept ;
+    rdfs:seeAlso al:PropertyKindScheme ;  # values come from this scheme
+    rdfs:label "property kind"@en , "물성 종류"@ko ;
+    rdfs:comment "Which property the value is of, a concept of al:PropertyKindScheme."@en ,
+        "값이 어떤 물성인지. al:PropertyKindScheme의 개념이다."@ko .
+
+al:underTest a owl:ObjectProperty ;                      # CQ8
+    rdfs:domain al:PropertyValue ; rdfs:range al:CorrosionTest ;
+    rdfs:label "under test"@en , "시험 조건"@ko ;
+    rdfs:comment "The corrosion test that produced the value."@en , "값을 만든 부식 시험."@ko .
+
+al:testClass a owl:ObjectProperty , owl:FunctionalProperty ;  # CQ8
+    rdfs:domain al:CorrosionTest ; rdfs:range skos:Concept ;
+    rdfs:seeAlso al:CorrosionTestScheme ;
+    rdfs:label "test class"@en , "시험 범주"@ko ;
+    rdfs:comment "Controlled class of the reported corrosion method; Other means no vocabulary match."@en , "보고된 부식 방법의 통제 범주. Other는 어휘 검색어와 일치하지 않음을 뜻한다."@ko .
+
+al:hasEvidence a owl:ObjectProperty ;                    # CQ9
+    rdfs:domain al:PropertyValue ; rdfs:range al:Evidence ;
+    rdfs:label "has evidence"@en , "근거"@ko ;
+    rdfs:comment "A quote backing the value."@en , "값을 뒷받침하는 인용."@ko .
+
+###############################################################################
+# Datatype properties
+###############################################################################
+
+al:element a owl:DatatypeProperty , owl:FunctionalProperty ;  # CQ1
+    rdfs:domain al:ElementContent ; rdfs:range xsd:string ;
+    rdfs:label "element"@en , "원소"@ko ;
+    rdfs:comment "Chemical symbol, e.g. Mg."@en , "원소 기호. 예: Mg."@ko .
+
+al:massPercent a owl:DatatypeProperty , owl:FunctionalProperty ;  # CQ1
+    rdfs:domain al:ElementContent ; rdfs:range xsd:decimal ;
+    rdfs:label "mass percent"@en , "질량 백분율"@ko ;
+    rdfs:comment "Content in wt%."@en , "함량(wt%)."@ko .
+
+al:compKey a owl:DatatypeProperty , owl:FunctionalProperty ;  # CQ2
+    rdfs:domain al:Alloy ; rdfs:range xsd:string ;
+    rdfs:label "composition key"@en , "조성 키"@ko ;
+    rdfs:comment "The 29 solute contents rounded to 3 decimals and joined by '|', as comp_key in unified_strength; equal keys mean the same alloy."@en ,
+        "용질 29개 함량을 소수 셋째 자리로 반올림해 '|'로 이은 값(unified_strength의 comp_key). 키가 같으면 같은 합금이다."@ko .
+
+al:designation a owl:DatatypeProperty ;                  # CQ2
+    rdfs:domain al:Alloy ; rdfs:range xsd:string ;
+    rdfs:label "designation"@en , "규격명"@ko ;
+    rdfs:comment "A standard alloy designation such as AA6061, when the source gives one."@en ,
+        "출처가 밝힌 규격 합금명(예: AA6061)."@ko .
+
+al:stepIndex a owl:DatatypeProperty , owl:FunctionalProperty ;  # CQ3
+    rdfs:domain al:ProcessStep ; rdfs:range xsd:integer ;
+    rdfs:label "step index"@en , "단계 순번"@ko ;
+    rdfs:comment "Position of the step in the processing history, starting at 1."@en , "공정 이력에서 단계의 순서(1부터)."@ko .
+
+al:temperatureC a owl:DatatypeProperty , owl:FunctionalProperty ;  # CQ3, CQ4
+    rdfs:domain al:ProcessStep ; rdfs:range xsd:decimal ;
+    rdfs:label "temperature (°C)"@en , "온도(°C)"@ko ;
+    rdfs:comment "Hold temperature of the step in degrees Celsius."@en , "단계의 유지 온도(섭씨)."@ko .
+
+al:durationH a owl:DatatypeProperty , owl:FunctionalProperty ;  # CQ3, CQ4
+    rdfs:domain al:ProcessStep ; rdfs:range xsd:decimal ;
+    rdfs:label "duration (h)"@en , "시간(h)"@ko ;
+    rdfs:comment "Hold time of the step in hours."@en , "단계의 유지 시간(시간 단위)."@ko .
+
+al:ratingValue a owl:DatatypeProperty , owl:FunctionalProperty ;  # CQ8
+    rdfs:domain al:PropertyValue ; rdfs:range xsd:string ;
+    rdfs:label "rating"@en , "등급"@ko ;
+    rdfs:comment "A categorical result such as Excellent or Good (corrosion ratings)."@en ,
+        "Excellent, Good 같은 범주형 결과(부식 등급)."@ko .
+
+al:environment a owl:DatatypeProperty ;                  # CQ8
+    rdfs:domain al:CorrosionTest ; rdfs:range xsd:string ;
+    rdfs:label "environment"@en , "시험 환경"@ko ;
+    rdfs:comment "Test medium as reported (solution, and temperature or duration when given), e.g. 3.5 wt% NaCl, 25 °C."@en ,
+        "보고된 시험 용액(주어지면 온도·시간 포함). 예: 3.5 wt% NaCl, 25 °C."@ko .
+
+al:referenceElectrode a owl:DatatypeProperty , owl:FunctionalProperty ;  # CQ7, CQ8, CQ11
+    rdfs:domain al:CorrosionTest ; rdfs:range xsd:string ;
+    rdfs:label "reference electrode"@en , "기준전극"@ko ;
+    rdfs:comment "Reference electrode of the test's potentials as the paper names it, e.g. SCE or Ag/AgCl; potentials compare only on one reference."@en ,
+        "시험 전위의 기준전극(논문 표기). 예: SCE, Ag/AgCl. 전위는 같은 기준전극끼리만 비교한다."@ko .
+
+al:testMethod a owl:DatatypeProperty ;                   # CQ8
+    rdfs:domain al:CorrosionTest ; rdfs:range xsd:string ;
+    rdfs:label "test method"@en , "시험 방법"@ko ;
+    rdfs:comment "Test method or standard as reported, e.g. ISO 11846."@en , "보고된 시험 방법이나 규격. 예: ISO 11846."@ko .
+
+al:page a owl:DatatypeProperty , owl:FunctionalProperty ;  # CQ9
+    rdfs:domain al:Evidence ; rdfs:range xsd:integer ;
+    rdfs:label "page"@en , "페이지"@ko ;
+    rdfs:comment "Page of the source where the quote occurs."@en , "인용이 있는 출처의 페이지."@ko .
+
+al:quote a owl:DatatypeProperty ;                        # CQ9
+    rdfs:domain al:Evidence ; rdfs:range xsd:string ;
+    rdfs:label "quote"@en , "인용문"@ko ;
+    rdfs:comment "Verbatim text copied from the source."@en , "출처에서 그대로 옮긴 원문."@ko .
+
+al:reviewStatus a owl:DatatypeProperty , owl:FunctionalProperty ;  # CQ9
+    rdfs:domain al:Evidence ; rdfs:range xsd:string ;
+    rdfs:label "review status"@en , "검수 상태"@ko ;
+    rdfs:comment "'reviewed' after a person checked the quote against the source, else 'unreviewed'."@en ,
+        "사람이 출처와 대조했으면 'reviewed', 아니면 'unreviewed'."@ko .
+
+al:reviewedBy a owl:DatatypeProperty , owl:FunctionalProperty ;  # CQ9
+    rdfs:domain al:Evidence ; rdfs:range xsd:string ;
+    rdfs:label "reviewed by"@en , "검수자"@ko ;
+    rdfs:comment "Who set 'reviewed', as the record states it, e.g. an AI review the user delegated. Absent when the record names no reviewer (a person by default)."@en ,
+        "'reviewed'로 바꾼 주체를 기록에 적힌 그대로 적는다. 예: 사용자가 위임한 AI 검수. 기록에 검수자가 없으면 생략한다(기본은 사람)."@ko .
+
+al:qualityFlag a owl:DatatypeProperty ;               # CQ1, CQ6 (flagged samples are left out by default)
+    rdfs:domain al:Sample ; rdfs:range xsd:string ;
+    rdfs:label "quality flag"@en , "품질 표시"@ko ;
+    rdfs:comment "Why a sample's reported values are doubtful, e.g. 'YTS exceeds UTS'. Set by the build from shapes/rules.rq, shared-composition designations and curation/flags.csv; the source values are kept unchanged."@en ,
+        "시료의 보고값이 의심스러운 이유. 예: 'YTS exceeds UTS'. 빌드가 shapes/rules.rq, 조성이 겹치는 규격명, curation/flags.csv에서 붙이며 원본 값은 바꾸지 않는다."@ko .
+
+al:notReported a owl:DatatypeProperty ;                  # CQ10
+    rdfs:domain schema:CreativeWork ; rdfs:range xsd:string ;
+    rdfs:label "not reported"@en , "미보고 항목"@ko ;
+    rdfs:comment "An item the source does not report in text or tables, e.g. 'EL only shown in Fig. 5'."@en ,
+        "출처가 본문이나 표에 보고하지 않은 항목. 예: 'EL은 그림 5에만 있음'."@ko .
+
+###############################################################################
+# Units QUDT does not define
+###############################################################################
+
+al:OHM-CentiM2 a qudt:Unit ;                             # CQ7 (polarization resistance)
+    qudt:symbol "Ω·cm²" ;
+    rdfs:label "ohm square centimetre"@en , "옴 제곱센티미터"@ko ;
+    rdfs:comment "Area-specific resistance (polarization or charge-transfer resistance); QUDT has no such unit. kohm cm2 values are stored times 1000."@en ,
+        "면적 비저항(분극·전하 이동 저항). QUDT에 없는 단위다. kohm cm2 값은 1000을 곱해 저장한다."@ko .

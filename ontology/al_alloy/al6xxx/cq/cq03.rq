@@ -1,0 +1,11 @@
+# CQ3: Which process steps did a sample go through, in order? (bind ?sample for one sample)
+PREFIX al:   <https://w3id.org/al6xxx#>
+PREFIX qudt: <http://qudt.org/schema/qudt/>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+
+SELECT ?sample ?stepIndex ?stepType ?temperatureC ?durationH WHERE {
+  ?sample al:hasProcessStep ?st .
+  ?st al:stepIndex ?stepIndex ; al:stepType ?stepType .
+  OPTIONAL { ?st al:temperatureC ?temperatureC }
+  OPTIONAL { ?st al:durationH ?durationH }
+} ORDER BY ?sample ?stepIndex

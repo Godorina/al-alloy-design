@@ -1,0 +1,14 @@
+# CQ4: Which datasets were used for a property: size, kind of source, where published, local copy, same data elsewhere?
+# params: property=al:UTS
+PREFIX ml: <https://w3id.org/alml#>
+PREFIX al: <https://w3id.org/al6xxx#>
+PREFIX e: <https://w3id.org/alml/entity/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX schema: <https://schema.org/>
+
+SELECT DISTINCT ?study ?dataset ?size ?source ?access ?local ?same WHERE {
+  ?study ml:hasTask ?t . ?t ml:targetProperty ?property ; ml:usesDataset ?dataset .
+  OPTIONAL { ?dataset ml:sampleCount ?size } OPTIONAL { ?dataset ml:dataSource ?source }
+  OPTIONAL { ?dataset ml:accessUrl ?access } OPTIONAL { ?dataset ml:localCopy ?local }
+  OPTIONAL { ?dataset ml:sameDataAs ?same }
+} ORDER BY DESC(?size) ?source

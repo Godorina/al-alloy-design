@@ -1,0 +1,14 @@
+# CQ6: Samples of one alloy series in a temper with measured UTS >= utsMin (MPa) and EL >= elMin (%), with their alloy.
+# params: series=al:Series6xxx temper=al:T6 utsMin=300 elMin=10 includeFlagged=0
+PREFIX al:   <https://w3id.org/al6xxx#>
+PREFIX qudt: <http://qudt.org/schema/qudt/>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+
+SELECT ?sample ?alloy ?uts ?el WHERE {
+  ?sample al:hasTemper ?temper ; al:ofAlloy ?alloy ; al:hasPropertyValue ?u , ?e .
+  ?alloy al:inSeries ?series .
+  ?u a al:MeasuredValue ; al:propertyKind al:UTS ; qudt:numericValue ?uts .
+  ?e a al:MeasuredValue ; al:propertyKind al:EL ; qudt:numericValue ?el .
+  FILTER (?uts >= ?utsMin && ?el >= ?elMin)
+  FILTER (?includeFlagged = 1 || NOT EXISTS { ?sample al:qualityFlag ?anyFlag })
+} ORDER BY DESC(?uts)

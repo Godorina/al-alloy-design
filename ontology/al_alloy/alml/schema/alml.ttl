@@ -1,0 +1,183 @@
+# alml ontology v0.1.0 - machine-learning studies of aluminium alloys (schema).
+# Scope: CQ1-CQ6 in docs/cq.md; every term serves at least one CQ (noted per term).
+# Target properties and alloy series reuse the shared vocabulary (../../common/vocab.ttl, al: IRIs);
+# task types, input features, algorithms, metrics and data sources are in alml-vocab.ttl;
+# links to W3C ML-Schema are skos matches in alml-align.ttl.
+
+@prefix ml:      <https://w3id.org/alml#> .
+@prefix al:      <https://w3id.org/al6xxx#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema:  <https://schema.org/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+<https://w3id.org/alml> a owl:Ontology ;
+    dcterms:title "Machine-learning studies of aluminium alloys"@en , "알루미늄 합금 머신러닝 연구 온톨로지"@ko ;
+    dcterms:description "What each study predicts, from which data and features, with which models and scores, and what it concludes, with quote evidence."@en ,
+        "각 연구가 무엇을, 어떤 데이터와 입력 특징으로, 어떤 모델로 예측했고 성능과 결론이 무엇인지를 인용 근거와 함께 표현한다."@ko ;
+    owl:versionInfo "0.2.0" .
+
+###############################################################################
+# Classes
+###############################################################################
+
+ml:Study a owl:Class ; rdfs:subClassOf schema:ScholarlyArticle ;   # CQ1-CQ6
+    rdfs:label "Study"@en , "연구"@ko ;
+    rdfs:comment "One published paper; its title, DOI and year use schema:name, schema:identifier and schema:datePublished."@en ,
+        "출판된 논문 하나. 제목·DOI·연도는 schema:name, schema:identifier, schema:datePublished로 적는다."@ko .
+
+ml:Task a owl:Class ;                                                 # CQ1-CQ4
+    rdfs:label "Task"@en , "예측 과제"@ko ;
+    rdfs:comment "What a study models: target properties, alloy series, task type, input feature kinds, data, models and scores."@en ,
+        "연구가 모델링한 과제: 목표 물성, 합금 계열, 과제 종류, 입력 특징 종류, 데이터, 모델, 성능."@ko .
+
+ml:Dataset a owl:Class ;                                              # CQ4
+    rdfs:label "Dataset"@en , "데이터셋"@ko ;
+    rdfs:comment "The data a task was trained or tested on: size, kind of source, where it is published."@en ,
+        "과제의 학습·시험 데이터: 크기, 출처 종류, 공개 위치."@ko .
+
+ml:Model a owl:Class ;                                                # CQ3
+    rdfs:label "Model"@en , "모델"@ko ;
+    rdfs:comment "A machine-learning model of a task, named by its algorithm."@en , "과제의 머신러닝 모델. 알고리즘으로 구분한다."@ko .
+
+ml:Score a owl:Class ;                                                # CQ3
+    rdfs:label "Score"@en , "성능 점수"@ko ;
+    rdfs:comment "One reported evaluation of a model: a metric and its value."@en , "모델 평가 결과 하나: 지표와 값."@ko .
+
+ml:Finding a owl:Class ;                                              # CQ5
+    rdfs:label "Finding"@en , "핵심 결론"@ko ;
+    rdfs:comment "A main conclusion of a study, as a short statement backed by a quote."@en ,
+        "연구의 주요 결론 하나. 인용으로 뒷받침되는 짧은 문장."@ko .
+
+ml:Evidence a owl:Class ;                                             # CQ5
+    rdfs:label "Evidence"@en , "근거"@ko ;
+    rdfs:comment "A verbatim quote and its page in the paper text."@en , "논문 텍스트의 그대로 옮긴 인용과 쪽."@ko .
+
+###############################################################################
+# Object properties
+###############################################################################
+
+ml:hasTask a owl:ObjectProperty ; rdfs:domain ml:Study ; rdfs:range ml:Task ;          # CQ1-CQ4
+    rdfs:label "has task"@en , "과제"@ko ;
+    rdfs:comment "A task the study models."@en , "연구가 모델링한 과제."@ko .
+
+ml:targetProperty a owl:ObjectProperty ; rdfs:domain ml:Task ; rdfs:range skos:Concept ;  # CQ1-CQ4
+    rdfs:seeAlso al:PropertyKindScheme ;
+    rdfs:label "target property"@en , "목표 물성"@ko ;
+    rdfs:comment "A property the task predicts (al:PropertyKindScheme); ml:targetText holds the paper's words when none fits."@en ,
+        "과제가 예측하는 물성(al:PropertyKindScheme). 맞는 것이 없으면 ml:targetText에 논문 표현을 적는다."@ko .
+
+ml:alloySeries a owl:ObjectProperty ; rdfs:domain ml:Task ; rdfs:range skos:Concept ;    # CQ1
+    rdfs:seeAlso al:SeriesScheme ;
+    rdfs:label "alloy series"@en , "합금 계열"@ko ;
+    rdfs:comment "An alloy family the task covers (al:SeriesScheme)."@en , "과제가 다루는 합금 계열(al:SeriesScheme)."@ko .
+
+ml:taskType a owl:ObjectProperty ; rdfs:domain ml:Task ; rdfs:range skos:Concept ;       # CQ1
+    rdfs:seeAlso ml:TaskTypeScheme ;
+    rdfs:label "task type"@en , "과제 종류"@ko ;
+    rdfs:comment "Regression, classification, inverse design, ... (ml:TaskTypeScheme)."@en , "회귀, 분류, 역설계 등(ml:TaskTypeScheme)."@ko .
+
+ml:usesFeature a owl:ObjectProperty ; rdfs:domain ml:Task ; rdfs:range skos:Concept ;     # CQ2
+    rdfs:seeAlso ml:FeatureKindScheme ;
+    rdfs:label "uses feature kind"@en , "입력 특징 종류"@ko ;
+    rdfs:comment "A kind of model input (ml:FeatureKindScheme)."@en , "모델 입력의 종류(ml:FeatureKindScheme)."@ko .
+
+ml:usesDataset a owl:ObjectProperty ; rdfs:domain ml:Task ; rdfs:range ml:Dataset ;      # CQ4
+    rdfs:label "uses dataset"@en , "사용 데이터셋"@ko ;
+    rdfs:comment "Data the task was trained or tested on."@en , "과제의 학습·시험 데이터."@ko .
+
+ml:dataSource a owl:ObjectProperty ; rdfs:domain ml:Dataset ; rdfs:range skos:Concept ;   # CQ4
+    rdfs:seeAlso ml:DataSourceScheme ;
+    rdfs:label "data source"@en , "데이터 출처"@ko ;
+    rdfs:comment "Where the data comes from: experiments, literature, handbooks or simulation (ml:DataSourceScheme)."@en ,
+        "데이터가 온 곳: 실험, 문헌, 핸드북, 시뮬레이션(ml:DataSourceScheme)."@ko .
+
+ml:sameDataAs a owl:ObjectProperty ; rdfs:domain ml:Dataset ; rdfs:range rdfs:Resource ;  # CQ4
+    rdfs:label "same data as"@en , "같은 데이터"@ko ;
+    rdfs:comment "The same data as a dataset node of another knowledge graph (e.g. the al6xxx KG), so it is not stored twice."@en ,
+        "다른 KG(예: al6xxx)의 데이터셋 노드와 같은 데이터. 두 번 저장하지 않기 위한 연결."@ko .
+
+ml:usesModel a owl:ObjectProperty ; rdfs:domain ml:Task ; rdfs:range ml:Model ;          # CQ3
+    rdfs:label "uses model"@en , "사용 모델"@ko ;
+    rdfs:comment "A model trained for the task."@en , "과제를 위해 학습한 모델."@ko .
+
+ml:algorithm a owl:ObjectProperty ; rdfs:domain ml:Model ; rdfs:range skos:Concept ;      # CQ3
+    rdfs:seeAlso ml:AlgorithmScheme ;
+    rdfs:label "algorithm"@en , "알고리즘"@ko ;
+    rdfs:comment "The model's algorithm (ml:AlgorithmScheme)."@en , "모델의 알고리즘(ml:AlgorithmScheme)."@ko .
+
+ml:hasScore a owl:ObjectProperty ; rdfs:domain ml:Task ; rdfs:range ml:Score ;           # CQ3
+    rdfs:label "has score"@en , "성능 점수"@ko ;
+    rdfs:comment "A reported evaluation for the task."@en , "과제에 대해 보고된 평가."@ko .
+
+ml:ofModel a owl:ObjectProperty ; rdfs:domain ml:Score ; rdfs:range ml:Model ;           # CQ3
+    rdfs:label "of model"@en , "평가 대상 모델"@ko ;
+    rdfs:comment "The model the score evaluates."@en , "점수가 평가한 모델."@ko .
+
+ml:metric a owl:ObjectProperty ; rdfs:domain ml:Score ; rdfs:range skos:Concept ;         # CQ3
+    rdfs:seeAlso ml:MetricScheme ;
+    rdfs:label "metric"@en , "평가 지표"@ko ;
+    rdfs:comment "The evaluation metric (ml:MetricScheme)."@en , "평가 지표(ml:MetricScheme)."@ko .
+
+ml:evaluatedOn a owl:ObjectProperty ; rdfs:domain ml:Score ; rdfs:range skos:Concept ;    # CQ3
+    rdfs:seeAlso ml:EvaluationScheme ;
+    rdfs:label "evaluated on"@en , "평가 데이터"@ko ;
+    rdfs:comment "Which data gave the score: held-out test, cross-validation or external validation (ml:EvaluationScheme)."@en ,
+        "점수를 낸 데이터: 시험 세트, 교차 검증, 외부 검증(ml:EvaluationScheme)."@ko .
+
+ml:hasFinding a owl:ObjectProperty ; rdfs:domain ml:Study ; rdfs:range ml:Finding ;      # CQ5
+    rdfs:label "has finding"@en , "결론"@ko ;
+    rdfs:comment "A main conclusion of the study."@en , "연구의 주요 결론."@ko .
+
+ml:hasEvidence a owl:ObjectProperty ; rdfs:domain rdfs:Resource ; rdfs:range ml:Evidence ;  # CQ5
+    rdfs:label "has evidence"@en , "근거"@ko ;
+    rdfs:comment "A quote from the paper that backs this node."@en , "이 노드를 뒷받침하는 논문 인용."@ko .
+
+###############################################################################
+# Datatype properties
+###############################################################################
+
+ml:targetText a owl:DatatypeProperty ; rdfs:domain ml:Task ; rdfs:range xsd:string ;      # CQ1
+    rdfs:label "target as written"@en , "목표(논문 표현)"@ko ;
+    rdfs:comment "The target in the paper's words, kept when no al:PropertyKindScheme concept fits."@en ,
+        "논문이 쓴 목표 표현. al:PropertyKindScheme에 맞는 개념이 없을 때 남긴다."@ko .
+
+ml:sampleCount a owl:DatatypeProperty ; rdfs:domain ml:Dataset ; rdfs:range xsd:integer ;  # CQ4
+    rdfs:label "sample count"@en , "데이터 수"@ko ;
+    rdfs:comment "Number of data points as the paper states it."@en , "논문이 밝힌 데이터 수."@ko .
+
+ml:accessUrl a owl:DatatypeProperty ; rdfs:domain ml:Dataset ; rdfs:range xsd:anyURI ;    # CQ4
+    rdfs:label "access URL"@en , "공개 주소"@ko ;
+    rdfs:comment "Where the data is published (repository DOI or URL)."@en , "데이터 공개 위치(저장소 DOI나 URL)."@ko .
+
+ml:localCopy a owl:DatatypeProperty ; rdfs:domain ml:Dataset ; rdfs:range xsd:string ;    # CQ4
+    rdfs:label "local copy"@en , "로컬 사본"@ko ;
+    rdfs:comment "Path of the downloaded copy, when there is one."@en , "받아 둔 사본의 경로."@ko .
+
+ml:scoreValue a owl:DatatypeProperty ; rdfs:domain ml:Score ; rdfs:range xsd:decimal ;    # CQ3
+    rdfs:label "score value"@en , "점수 값"@ko ;
+    rdfs:comment "The metric value as printed in the paper."@en , "논문에 적힌 지표 값."@ko .
+
+ml:statement a owl:DatatypeProperty ; rdfs:domain ml:Finding ; rdfs:range xsd:string ;    # CQ5
+    rdfs:label "statement"@en , "결론 문장"@ko ;
+    rdfs:comment "The finding in one sentence."@en , "결론을 한 문장으로."@ko .
+
+ml:quote a owl:DatatypeProperty ; rdfs:domain ml:Evidence ; rdfs:range xsd:string ;       # CQ5
+    rdfs:label "quote"@en , "인용"@ko ;
+    rdfs:comment "Verbatim text from the paper."@en , "논문에서 그대로 옮긴 글."@ko .
+
+ml:page a owl:DatatypeProperty ; rdfs:domain ml:Evidence ; rdfs:range xsd:integer ;       # CQ5
+    rdfs:label "page"@en , "쪽"@ko ;
+    rdfs:comment "Page of the quote in the paper text."@en , "인용이 있는 쪽."@ko .
+
+ml:experimentallyValidated a owl:DatatypeProperty ; rdfs:domain ml:Study ; rdfs:range xsd:boolean ;  # CQ6
+    rdfs:label "experimentally validated"@en , "실험 검증"@ko ;
+    rdfs:comment "True when the study measured new alloys or conditions to test its predictions."@en ,
+        "예측을 확인하려고 새 합금이나 조건을 실제로 측정한 연구이면 참."@ko .
+
+ml:reviewStatus a owl:DatatypeProperty ; rdfs:domain ml:Study ; rdfs:range xsd:string ;   # CQ5
+    rdfs:label "review status"@en , "검수 상태"@ko ;
+    rdfs:comment "Whether a person has checked the extracted record (reviewed) or not yet (unreviewed)."@en ,
+        "사람이 추출 기록을 확인했는지(reviewed) 아닌지(unreviewed)."@ko .

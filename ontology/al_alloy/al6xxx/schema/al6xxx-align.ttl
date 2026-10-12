@@ -1,0 +1,17 @@
+# al6xxx ontology v0.1.0 — links to external ontologies. skos matches only (no owl:imports),
+# so external versions can change without changing what our own data means.
+# Checked 2026-09-25:
+#   TTO v2.0.1 (PMD Tensile Test Ontology, CC BY 4.0), https://github.com/materialdigital/application-ontologies
+#     commit a4740da, tensile_test_ontology_TTO/pmd_tto.ttl
+#   QUDT schema http://qudt.org/schema/qudt/
+#   Not linked: PMD Heat Treatment Ontology (HTO v2.0) models furnaces and quench equipment, not ageing steps.
+
+@prefix al:   <https://w3id.org/al6xxx#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tto:  <https://w3id.org/pmd/tto/> .
+@prefix qudt: <http://qudt.org/schema/qudt/> .
+
+al:UTS skos:closeMatch tto:TensileStrength .
+al:YTS skos:closeMatch tto:YieldStrength , tto:Rp02 .
+al:EL  skos:closeMatch tto:PercentageElongationAfterFracture .
+al:PropertyValue skos:closeMatch qudt:QuantityValue .

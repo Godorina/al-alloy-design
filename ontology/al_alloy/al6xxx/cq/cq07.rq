@@ -1,0 +1,16 @@
+# CQ7: Is each value measured, nominal or predicted (with its number and unit, or rating, and corrosion test:
+# method, medium, reference electrode)? For predictions: the run and what it used.
+PREFIX al:   <https://w3id.org/al6xxx#>
+PREFIX qudt: <http://qudt.org/schema/qudt/>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+
+SELECT ?sample ?value ?kind ?valueClass ?numericValue ?unit ?rating ?test ?medium ?reference ?run ?used WHERE {
+  VALUES ?valueClass { al:MeasuredValue al:NominalValue al:PredictedValue }
+  ?sample al:hasPropertyValue ?value .
+  ?value a ?valueClass ; al:propertyKind ?kind .
+  OPTIONAL { ?value qudt:numericValue ?numericValue } OPTIONAL { ?value qudt:unit ?unit }
+  OPTIONAL { ?value al:ratingValue ?rating }
+  OPTIONAL { ?value al:underTest ?t . ?t al:testMethod ?test
+             OPTIONAL { ?t al:environment ?medium } OPTIONAL { ?t al:referenceElectrode ?reference } }
+  OPTIONAL { ?value prov:wasGeneratedBy ?run . OPTIONAL { ?run prov:used ?used } }
+} ORDER BY ?sample ?kind

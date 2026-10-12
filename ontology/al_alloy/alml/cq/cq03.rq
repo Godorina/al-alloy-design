@@ -1,0 +1,15 @@
+# CQ3: Which models reached which scores for a property, best first per metric (R2/accuracy-like high, errors low)?
+# params: property=al:UTS
+PREFIX ml: <https://w3id.org/alml#>
+PREFIX al: <https://w3id.org/al6xxx#>
+PREFIX e: <https://w3id.org/alml/entity/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX schema: <https://schema.org/>
+
+SELECT ?study ?algorithm ?metric ?value ?split WHERE {
+  ?study ml:hasTask ?t . ?t ml:targetProperty ?property ; ml:hasScore ?s .
+  ?s ml:metric ?metric ; ml:scoreValue ?value ; ml:ofModel/ml:algorithm ?algorithm .
+  OPTIONAL { ?s ml:evaluatedOn ?split }
+  BIND (IF(?metric IN (ml:R2, ml:Accuracy, ml:BalancedAccuracy, ml:F1, ml:Precision, ml:Recall, ml:AUC,
+                  ml:PCC, ml:IoU), -?value, ?value) AS ?rank)
+} ORDER BY ?metric ?rank

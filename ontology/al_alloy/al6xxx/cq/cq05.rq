@@ -1,0 +1,10 @@
+# CQ5: Which steps that a sample's temper requires are not reported for it?
+PREFIX al:   <https://w3id.org/al6xxx#>
+PREFIX qudt: <http://qudt.org/schema/qudt/>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+
+SELECT ?sample ?temper ?missing WHERE {
+  ?sample al:hasTemper ?temper .
+  ?temper al:impliesStepType ?missing .
+  FILTER NOT EXISTS { ?sample al:hasProcessStep/al:stepType ?missing }
+} ORDER BY ?sample ?missing

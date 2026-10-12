@@ -1,0 +1,335 @@
+# Shared controlled vocabularies (SKOS) v0.4.0: every ontology under ontology/ and the paper-extract
+# checker read the allowed tempers, routes, step types and heating methods from this one file.
+# The concepts keep their al: IRIs so existing knowledge graphs stay valid.
+# Step types carry skos:hiddenLabel search words: the paper-extract checker keeps a step only when a quote names it.
+# Temper definitions follow ANSI H35.1 in short form. al:impliesStepType lists the steps a temper
+# requires by definition (CQ5: required but absent = not reported). Quenching is left implicit:
+# sources rarely report it separately, and flagging it everywhere would hide real gaps.
+
+@prefix al:   <https://w3id.org/al6xxx#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+###############################################################################
+# Tempers (CQ1, CQ5, CQ6)
+###############################################################################
+
+al:TemperScheme a skos:ConceptScheme ;
+    rdfs:label "Temper designations"@en , "템퍼 기호"@ko .
+
+al:F a skos:Concept ; skos:inScheme al:TemperScheme ; skos:notation "F" ;
+    skos:prefLabel "F (as fabricated)"@en , "F (가공 그대로)"@ko ;
+    skos:definition "As fabricated; no thermal treatment required."@en , "가공한 그대로. 열처리가 필요 없다."@ko .
+
+al:W a skos:Concept ; skos:inScheme al:TemperScheme ; skos:notation "W" ;
+    skos:prefLabel "W (solution heat-treated)"@en , "W (용체화 직후)"@ko ;
+    skos:definition "Solution heat-treated; unstable, naturally ageing."@en , "용체화 처리 직후. 불안정하며 자연시효가 진행 중이다."@ko ;
+    al:impliesStepType al:SolutionTreatment .
+
+al:H a skos:Concept ; skos:inScheme al:TemperScheme ; skos:notation "H" ;
+    skos:prefLabel "H (strain-hardened)"@en , "H (가공경화)"@ko ;
+    skos:definition "Strain-hardened; no thermal treatment required."@en , "가공경화. 열처리가 필요 없다."@ko .
+
+al:O a skos:Concept ; skos:inScheme al:TemperScheme ; skos:notation "O" ;
+    skos:prefLabel "O (annealed)"@en , "O (소둔)"@ko ;
+    skos:definition "Annealed to the softest condition."@en , "가장 무른 상태로 소둔."@ko ;
+    al:impliesStepType al:Annealing .
+
+al:T1 a skos:Concept ; skos:inScheme al:TemperScheme ; skos:notation "T1" ;
+    skos:prefLabel "T1"@en , "T1"@ko ;
+    skos:definition "Cooled from an elevated-temperature shaping process and naturally aged."@en ,
+        "고온 성형 후 냉각하고 자연시효. 별도 용체화는 없다."@ko ;
+    al:impliesStepType al:NaturalAgeing .
+
+al:T4 a skos:Concept ; skos:inScheme al:TemperScheme ; skos:notation "T4" ;
+    skos:prefLabel "T4"@en , "T4"@ko ;
+    skos:definition "Solution heat-treated and naturally aged."@en , "용체화 처리 후 자연시효."@ko ;
+    al:impliesStepType al:SolutionTreatment , al:NaturalAgeing .
+
+al:T5 a skos:Concept ; skos:inScheme al:TemperScheme ; skos:notation "T5" ;
+    skos:prefLabel "T5"@en , "T5"@ko ;
+    skos:definition "Cooled from an elevated-temperature shaping process and artificially aged."@en ,
+        "고온 성형 후 냉각하고 인공시효. 별도 용체화는 없다."@ko ;
+    al:impliesStepType al:ArtificialAgeing .
+
+al:T6 a skos:Concept ; skos:inScheme al:TemperScheme ; skos:notation "T6" ;
+    skos:prefLabel "T6"@en , "T6"@ko ;
+    skos:definition "Solution heat-treated and artificially aged."@en , "용체화 처리 후 인공시효."@ko ;
+    al:impliesStepType al:SolutionTreatment , al:ArtificialAgeing .
+
+al:T7 a skos:Concept ; skos:inScheme al:TemperScheme ; skos:notation "T7" ;
+    skos:prefLabel "T7"@en , "T7"@ko ;
+    skos:definition "Solution heat-treated and overaged or stabilized."@en , "용체화 처리 후 과시효 또는 안정화."@ko ;
+    al:impliesStepType al:SolutionTreatment , al:ArtificialAgeing .
+
+al:T8 a skos:Concept ; skos:inScheme al:TemperScheme ; skos:notation "T8" ;
+    skos:prefLabel "T8"@en , "T8"@ko ;
+    skos:definition "Solution heat-treated, cold worked, and artificially aged."@en , "용체화 처리, 냉간가공 후 인공시효."@ko ;
+    al:impliesStepType al:SolutionTreatment , al:ArtificialAgeing .
+
+al:T9 a skos:Concept ; skos:inScheme al:TemperScheme ; skos:notation "T9" ;
+    skos:prefLabel "T9"@en , "T9"@ko ;
+    skos:definition "Solution heat-treated, artificially aged, and cold worked."@en , "용체화 처리, 인공시효 후 냉간가공."@ko ;
+    al:impliesStepType al:SolutionTreatment , al:ArtificialAgeing .
+
+###############################################################################
+# Process step types (CQ3, CQ4, CQ5)
+###############################################################################
+
+al:StepTypeScheme a skos:ConceptScheme ;
+    rdfs:label "Process step types"@en , "공정 단계 종류"@ko .
+
+al:Homogenization a skos:Concept ; skos:inScheme al:StepTypeScheme ;
+    skos:hiddenLabel "homogeni" , "homogenis" ;
+    skos:prefLabel "Homogenization"@en , "균질화"@ko ;
+    skos:definition "High-temperature hold of the cast material to even out segregation."@en , "주조재의 편석을 없애기 위한 고온 유지."@ko .
+
+al:SolutionTreatment a skos:Concept ; skos:inScheme al:StepTypeScheme ;
+    skos:hiddenLabel "solution" , "sht" ;
+    skos:prefLabel "Solution treatment"@en , "용체화 처리"@ko ;
+    skos:definition "Hold that dissolves Mg and Si into solid solution before quenching."@en , "급냉 전에 Mg와 Si를 고용시키는 유지."@ko .
+
+al:Quenching a skos:Concept ; skos:inScheme al:StepTypeScheme ;
+    skos:hiddenLabel "quench" , "water" ;
+    skos:prefLabel "Quenching"@en , "급냉"@ko ;
+    skos:definition "Rapid cooling after solution treatment."@en , "용체화 처리 후 빠른 냉각."@ko .
+
+al:ArtificialAgeing a skos:Concept ; skos:inScheme al:StepTypeScheme ;
+    skos:hiddenLabel "age" , "aging" , "artificial" , "precipitation harden" ;
+    skos:prefLabel "Artificial ageing"@en , "인공시효"@ko ;
+    skos:definition "Hold at elevated temperature to precipitate strengthening phases; a two-step schedule is two steps."@en ,
+        "강화상을 석출시키는 고온 유지. 2단 시효는 단계 두 개로 기록한다."@ko .
+
+al:HotRolling a skos:Concept ; skos:inScheme al:StepTypeScheme ;
+    skos:hiddenLabel "hot roll" , "hot-roll" ;
+    skos:prefLabel "Hot rolling"@en , "열간압연"@ko ;
+    skos:definition "Rolling above the recrystallization temperature."@en , "재결정 온도 이상에서의 압연."@ko .
+
+al:ColdRolling a skos:Concept ; skos:inScheme al:StepTypeScheme ;
+    skos:hiddenLabel "cold roll" , "cold-roll" ;
+    skos:prefLabel "Cold rolling"@en , "냉간압연"@ko ;
+    skos:definition "Rolling at room temperature."@en , "상온 압연."@ko .
+
+al:ColdWorking a skos:Concept ; skos:inScheme al:StepTypeScheme ;
+    skos:hiddenLabel "cold work" , "cold-work" , "cold extru" , "room temperature" , "room-temperature" , "draw" , "spif" , "incremental" , "form" ;
+    skos:prefLabel "Cold working"@en , "냉간가공"@ko ;
+    skos:definition "Room-temperature forming other than rolling: extrusion, drawing, incremental forming (SPIF)."@en ,
+        "압연 외의 상온 성형: 압출, 인발, 점진 성형(SPIF)."@ko .
+
+al:HotWorking a skos:Concept ; skos:inScheme al:StepTypeScheme ;
+    skos:hiddenLabel "hot extru" , "hot-extru" , "hot work" , "hot forg" , "extru" , "forg" ;
+    skos:prefLabel "Hot working"@en , "열간가공"@ko ;
+    skos:definition "Forming above the recrystallization temperature other than rolling: hot extrusion, hot forging."@en ,
+        "압연 외의 고온 성형: 열간 압출, 열간 단조."@ko .
+
+al:Annealing a skos:Concept ; skos:inScheme al:StepTypeScheme ;
+    skos:hiddenLabel "anneal" ;
+    skos:prefLabel "Annealing"@en , "소둔"@ko ;
+    skos:definition "Softening hold, including intermediate annealing between rolling passes."@en ,
+        "연화를 위한 유지. 압연 사이의 중간 소둔도 포함한다."@ko .
+
+al:NaturalAgeing a skos:Concept ; skos:inScheme al:StepTypeScheme ;
+    skos:hiddenLabel "natural" , "room temperature" , "room-temperature" ;
+    skos:prefLabel "Natural ageing"@en , "자연시효"@ko ;
+    skos:definition "Ageing at room temperature."@en , "상온에서 일어나는 시효."@ko .
+
+###############################################################################
+# Routes (CQ1)
+###############################################################################
+
+al:RouteScheme a skos:ConceptScheme ;
+    rdfs:label "Product routes"@en , "가공 방식"@ko .
+
+al:Extrusion a skos:Concept ; skos:inScheme al:RouteScheme ;
+    skos:prefLabel "Extrusion"@en , "압출"@ko ; skos:definition "Extruded product."@en , "압출재."@ko .
+al:Sheet a skos:Concept ; skos:inScheme al:RouteScheme ;
+    skos:prefLabel "Sheet"@en , "판재"@ko ; skos:definition "Rolled sheet."@en , "압연 판재."@ko .
+al:Plate a skos:Concept ; skos:inScheme al:RouteScheme ;
+    skos:prefLabel "Plate"@en , "후판"@ko ; skos:definition "Rolled plate."@en , "압연 후판."@ko .
+al:Rolled a skos:Concept ; skos:inScheme al:RouteScheme ;
+    skos:prefLabel "Rolled"@en , "압연재"@ko ; skos:definition "Rolled product, form not specified."@en , "형태가 명시되지 않은 압연재."@ko .
+al:Cast a skos:Concept ; skos:inScheme al:RouteScheme ;
+    skos:prefLabel "Cast"@en , "주조재"@ko ; skos:definition "Cast product, e.g. sand or permanent-mould casting."@en ,
+        "사형·금형 주조 제품."@ko .
+al:Wire a skos:Concept ; skos:inScheme al:RouteScheme ;
+    skos:prefLabel "Wire"@en , "와이어"@ko ; skos:definition "Wire product."@en , "선재."@ko .
+al:Drawn a skos:Concept ; skos:inScheme al:RouteScheme ;
+    skos:prefLabel "Drawn"@en , "인발재"@ko ; skos:definition "Drawn product, e.g. deep-drawn parts or drawn tube."@en ,
+        "인발·딥드로잉 제품."@ko .
+al:Forged a skos:Concept ; skos:inScheme al:RouteScheme ;
+    skos:prefLabel "Forged"@en , "단조재"@ko ; skos:definition "Forged product."@en , "단조재."@ko .
+al:Printed a skos:Concept ; skos:inScheme al:RouteScheme ;
+    skos:prefLabel "Printed (additive manufacturing)"@en , "적층 제조재"@ko ;
+    skos:definition "Additively manufactured part, e.g. laser powder bed fusion or wire-arc."@en ,
+        "레이저 분말 베드 용융, 와이어 아크 등으로 적층 제조한 부품."@ko .
+
+###############################################################################
+# Heating methods (how a process step reached its temperature)
+###############################################################################
+
+al:HeatingScheme a skos:ConceptScheme ;
+    rdfs:label "Heating methods"@en , "가열 방식"@ko .
+
+al:Furnace a skos:Concept ; skos:inScheme al:HeatingScheme ;
+    skos:prefLabel "Furnace"@en , "가열로"@ko ;
+    skos:definition "Conventional furnace or resistance heating."@en , "일반 가열로 또는 저항 가열."@ko .
+al:Infrared a skos:Concept ; skos:inScheme al:HeatingScheme ;
+    skos:prefLabel "Infrared"@en , "적외선"@ko ; skos:altLabel "IR"@en ;
+    skos:definition "Rapid infrared heating."@en , "급속 적외선 가열."@ko .
+
+###############################################################################
+# Corrosion test classes (CQ8)
+###############################################################################
+
+al:CorrosionTestScheme a skos:ConceptScheme ;
+    rdfs:label "Corrosion test classes"@en , "부식 시험 범주"@ko .
+
+al:Polarization a skos:Concept ; skos:inScheme al:CorrosionTestScheme ;
+    skos:hiddenLabel "potentiodynamic" , "tafel" , "polarization curve" , "lsv" , "cyclic polarization" ;
+    skos:prefLabel "Polarization"@en , "분극"@ko ; skos:definition "Polarization-curve electrochemical tests."@en , "분극 곡선 전기화학 시험."@ko .
+al:Impedance a skos:Concept ; skos:inScheme al:CorrosionTestScheme ;
+    skos:hiddenLabel "eis" , "electrochemical impedance" ;
+    skos:prefLabel "Impedance"@en , "임피던스"@ko ; skos:definition "Electrochemical impedance spectroscopy."@en , "전기화학 임피던스 분광."@ko .
+al:IntergranularImmersion a skos:Concept ; skos:inScheme al:CorrosionTestScheme ;
+    skos:hiddenLabel "astm g110" , "gb/t 7998" , "iso 11846" ;
+    skos:prefLabel "Intergranular immersion"@en , "입계부식 침지"@ko ; skos:definition "Standard intergranular-corrosion immersion tests."@en , "표준 입계부식 침지 시험."@ko .
+al:NitricAcidMassLoss a skos:Concept ; skos:inScheme al:CorrosionTestScheme ;
+    skos:hiddenLabel "namlt" , "g67" ;
+    skos:prefLabel "Nitric-acid mass loss"@en , "질산 질량감소"@ko ; skos:definition "NAMLT/G67 nitric-acid mass-loss tests."@en , "NAMLT/G67 질산 질량감소 시험."@ko .
+al:MassLossImmersion a skos:Concept ; skos:inScheme al:CorrosionTestScheme ;
+    skos:hiddenLabel "immersion" , "weight loss" , "mass loss" ;
+    skos:prefLabel "Mass-loss immersion"@en , "질량감소 침지"@ko ; skos:definition "Immersion tests reporting weight or mass loss."@en , "중량 또는 질량감소를 보고하는 침지 시험."@ko .
+al:StressCorrosion a skos:Concept ; skos:inScheme al:CorrosionTestScheme ;
+    skos:hiddenLabel "ssrt" , "slow strain" , "dcb" , "stress corrosion" ;
+    skos:prefLabel "Stress corrosion"@en , "응력부식"@ko ; skos:definition "Stress-corrosion and slow-strain-rate tests."@en , "응력부식 및 저속변형률 시험."@ko .
+al:OpenCircuit a skos:Concept ; skos:inScheme al:CorrosionTestScheme ;
+    skos:hiddenLabel "ocp" , "open circuit" ;
+    skos:prefLabel "Open circuit"@en , "개방회로"@ko ; skos:definition "Open-circuit-potential measurements."@en , "개방회로 전위 측정."@ko .
+al:ElectrochemicalNoise a skos:Concept ; skos:inScheme al:CorrosionTestScheme ;
+    skos:hiddenLabel "electrochemical noise" , "noise" ;
+    skos:prefLabel "Electrochemical noise"@en , "전기화학 잡음"@ko ; skos:definition "Electrochemical-noise measurements."@en , "전기화학 잡음 측정."@ko .
+al:SaltSpray a skos:Concept ; skos:inScheme al:CorrosionTestScheme ;
+    skos:hiddenLabel "salt spray" , "salt fog" , "cyclic wet" , "wet/dry" ;
+    skos:prefLabel "Salt spray"@en , "염수분무"@ko ; skos:definition "Salt-spray, fog, or cyclic wet/dry exposure."@en , "염수분무·포그·습건 반복 노출."@ko .
+al:Rating a skos:Concept ; skos:inScheme al:CorrosionTestScheme ;
+    skos:hiddenLabel "rating" , "jsm" ;
+    skos:prefLabel "Rating"@en , "등급"@ko ; skos:definition "Categorical corrosion-rating tests."@en , "범주형 내식 등급 시험."@ko .
+al:Other a skos:Concept ; skos:inScheme al:CorrosionTestScheme ;
+    skos:prefLabel "Other"@en , "기타"@ko ; skos:definition "A reported corrosion test without a class match."@en , "범주 검색어와 맞지 않는 보고된 부식 시험."@ko .
+
+###############################################################################
+# Property kinds (CQ6, CQ8)
+###############################################################################
+
+al:PropertyKindScheme a skos:ConceptScheme ;
+    rdfs:label "Property kinds"@en , "물성 종류"@ko .
+
+al:UTS a skos:Concept ; skos:inScheme al:PropertyKindScheme ;
+    skos:prefLabel "Ultimate tensile strength"@en , "인장강도"@ko ;
+    skos:definition "Maximum engineering stress in a tensile test, in MPa."@en , "인장시험의 최대 공칭응력(MPa)."@ko .
+al:YTS a skos:Concept ; skos:inScheme al:PropertyKindScheme ;
+    skos:prefLabel "Yield strength"@en , "항복강도"@ko ;
+    skos:definition "0.2 % offset yield strength in a tensile test, in MPa."@en , "인장시험의 0.2 % 오프셋 항복강도(MPa)."@ko .
+al:EL a skos:Concept ; skos:inScheme al:PropertyKindScheme ;
+    skos:prefLabel "Elongation"@en , "연신율"@ko ;
+    skos:definition "Elongation after fracture in a tensile test, in %."@en , "인장시험의 파단 연신율(%)."@ko .
+al:CorrosionRating a skos:Concept ; skos:inScheme al:PropertyKindScheme ;
+    skos:prefLabel "Corrosion rating"@en , "부식 등급"@ko ;
+    skos:definition "Categorical corrosion resistance, e.g. Excellent or Good."@en , "범주형 내식성. 예: Excellent, Good."@ko .
+al:CorrosionRate a skos:Concept ; skos:inScheme al:PropertyKindScheme ;
+    skos:prefLabel "Corrosion rate"@en , "부식 속도"@ko ;
+    skos:definition "Numeric corrosion rate or depth, with its unit."@en , "수치형 부식 속도나 깊이(단위 포함)."@ko .
+
+al:Hardness a skos:Concept ; skos:inScheme al:PropertyKindScheme ;
+    skos:prefLabel "Hardness"@en , "경도"@ko ;
+    skos:definition "Hardness with its scale (HV, HB, HRB ...)."@en , "경도(HV, HB, HRB 등 척도 포함)."@ko .
+al:ThermalConductivity a skos:Concept ; skos:inScheme al:PropertyKindScheme ;
+    skos:prefLabel "Thermal conductivity"@en , "열전도도"@ko ;
+    skos:definition "Thermal conductivity, in W/(m K)."@en , "열전도도(W/(m K))."@ko .
+al:ElectricalConductivity a skos:Concept ; skos:inScheme al:PropertyKindScheme ;
+    skos:prefLabel "Electrical conductivity"@en , "전기전도도"@ko ;
+    skos:definition "Electrical conductivity or resistivity, with its unit."@en , "전기전도도나 비저항(단위 포함)."@ko .
+al:InhibitionEfficiency a skos:Concept ; skos:inScheme al:PropertyKindScheme ;
+    skos:prefLabel "Corrosion inhibition efficiency"@en , "부식 억제 효율"@ko ;
+    skos:definition "Efficiency of a corrosion inhibitor, in %."@en , "부식 억제제의 효율(%)."@ko .
+al:FatigueLife a skos:Concept ; skos:inScheme al:PropertyKindScheme ;
+    skos:prefLabel "Fatigue life"@en , "피로 수명"@ko ;
+    skos:definition "Cycles to failure under cyclic loading."@en , "반복 하중에서 파단까지의 사이클 수."@ko .
+al:RelativeDensity a skos:Concept ; skos:inScheme al:PropertyKindScheme ;
+    skos:prefLabel "Relative density"@en , "상대 밀도"@ko ;
+    skos:definition "Density relative to the full density, in %."@en , "완전 밀도 대비 밀도(%)."@ko .
+al:SurfaceRoughness a skos:Concept ; skos:inScheme al:PropertyKindScheme ;
+    skos:prefLabel "Surface roughness"@en , "표면 거칠기"@ko ;
+    skos:definition "Surface roughness such as Ra, in um."@en , "Ra 같은 표면 거칠기(um)."@ko .
+al:ContactAngle a skos:Concept ; skos:inScheme al:PropertyKindScheme ;
+    skos:prefLabel "Contact angle"@en , "접촉각"@ko ;
+    skos:definition "Wetting contact angle, in degrees."@en , "젖음 접촉각(도)."@ko .
+al:PittingPotential a skos:Concept ; skos:inScheme al:PropertyKindScheme ;
+    skos:prefLabel "Pitting potential"@en , "피팅 전위"@ko ;
+    skos:definition "Potential at which stable pitting starts, with its reference electrode."@en , "안정 피팅이 시작되는 전위(기준 전극 포함)."@ko .
+al:EnergyForces a skos:Concept ; skos:inScheme al:PropertyKindScheme ;
+    skos:prefLabel "Energies and forces"@en , "에너지와 힘"@ko ;
+    skos:definition "Atomistic energies and forces, for interatomic potentials."@en , "원자간 퍼텐셜용 원자 에너지와 힘."@ko .
+
+al:SeriesScheme a skos:ConceptScheme ;
+    rdfs:label "Alloy series"@en , "합금 계열"@ko .
+
+al:Series2xxx a skos:Concept ; skos:inScheme al:SeriesScheme ; skos:notation "2xxx" ;
+    skos:prefLabel "Al-Cu (2xxx)"@en , "Al-Cu계(2xxx)"@ko ;
+    skos:definition "Alloy family by main alloying elements: Al-Cu (2xxx)."@en , "주 합금 원소로 나눈 합금 계열: Al-Cu계(2xxx)."@ko .
+al:Series5xxx a skos:Concept ; skos:inScheme al:SeriesScheme ; skos:notation "5xxx" ;
+    skos:prefLabel "Al-Mg (5xxx)"@en , "Al-Mg계(5xxx)"@ko ;
+    skos:definition "Alloy family by main alloying elements: Al-Mg (5xxx)."@en , "주 합금 원소로 나눈 합금 계열: Al-Mg계(5xxx)."@ko .
+al:Series6xxx a skos:Concept ; skos:inScheme al:SeriesScheme ; skos:notation "6xxx" ;
+    skos:prefLabel "Al-Mg-Si (6xxx)"@en , "Al-Mg-Si계(6xxx)"@ko ;
+    skos:definition "Alloy family by main alloying elements: Al-Mg-Si (6xxx)."@en , "주 합금 원소로 나눈 합금 계열: Al-Mg-Si계(6xxx)."@ko .
+al:Series7xxx a skos:Concept ; skos:inScheme al:SeriesScheme ; skos:notation "7xxx" ;
+    skos:prefLabel "Al-Zn-Mg (7xxx)"@en , "Al-Zn-Mg계(7xxx)"@ko ;
+    skos:definition "Alloy family by main alloying elements: Al-Zn-Mg (7xxx)."@en , "주 합금 원소로 나눈 합금 계열: Al-Zn-Mg계(7xxx)."@ko .
+al:SeriesAlLi a skos:Concept ; skos:inScheme al:SeriesScheme ; skos:notation "AlLi" ;
+    skos:prefLabel "Al-Li"@en , "Al-Li계"@ko ;
+    skos:definition "Alloy family by main alloying elements: Al-Li."@en , "주 합금 원소로 나눈 합금 계열: Al-Li계."@ko .
+al:SeriesCastAlSi a skos:Concept ; skos:inScheme al:SeriesScheme ; skos:notation "cast_AlSi" ;
+    skos:prefLabel "Cast Al-Si"@en , "Al-Si 주조 합금"@ko ;
+    skos:definition "Alloy family by main alloying elements: Cast Al-Si, including printed AlSi10Mg."@en , "주 합금 원소로 나눈 합금 계열: Al-Si 주조 합금(적층 AlSi10Mg 포함)."@ko .
+
+# v0.5: targets and series from the ML papers
+al:CorrosionPotential a skos:Concept ; skos:inScheme al:PropertyKindScheme ;
+    skos:prefLabel "Corrosion potential (Ecorr)"@en , "부식 전위(Ecorr)"@ko ;
+    skos:definition "Open-circuit or corrosion potential, with its reference electrode."@en , "개방회로·부식 전위(기준 전극 포함)."@ko .
+al:CorrosionCurrentDensity a skos:Concept ; skos:inScheme al:PropertyKindScheme ;
+    skos:prefLabel "Corrosion current density (icorr)"@en , "부식 전류 밀도(icorr)"@ko ;
+    skos:definition "From polarisation, in A/cm2 or similar."@en , "분극으로 구한 값(A/cm2 등)."@ko .
+al:PolarizationResistance a skos:Concept ; skos:inScheme al:PropertyKindScheme ;
+    skos:prefLabel "Polarisation resistance (Rp)"@en , "분극 저항(Rp)"@ko ;
+    skos:definition "From polarisation or impedance, in ohm cm2."@en , "분극·임피던스로 구한 값(ohm cm2)."@ko .
+al:CorrosionDepth a skos:Concept ; skos:inScheme al:PropertyKindScheme ;
+    skos:prefLabel "Corrosion depth"@en , "부식 깊이"@ko ;
+    skos:definition "Intergranular, pitting or exfoliation attack depth."@en , "입계·공식·박리 부식 깊이."@ko .
+al:SCCSusceptibility a skos:Concept ; skos:inScheme al:PropertyKindScheme ;
+    skos:prefLabel "Stress corrosion susceptibility"@en , "응력 부식 민감도"@ko ;
+    skos:definition "An SCC index or time to failure."@en , "응력 부식 지수나 파단 시간."@ko .
+al:FatigueStrength a skos:Concept ; skos:inScheme al:PropertyKindScheme ;
+    skos:prefLabel "Fatigue strength"@en , "피로 강도"@ko ;
+    skos:definition "Stress amplitude at a given number of cycles."@en , "주어진 반복수에서의 응력 진폭."@ko .
+al:ImpactEnergy a skos:Concept ; skos:inScheme al:PropertyKindScheme ;
+    skos:prefLabel "Impact energy"@en , "충격 에너지"@ko ;
+    skos:definition "Charpy or Izod absorbed energy, in J."@en , "샤르피·아이조드 흡수 에너지(J)."@ko .
+al:Porosity a skos:Concept ; skos:inScheme al:PropertyKindScheme ;
+    skos:prefLabel "Porosity"@en , "기공률"@ko ;
+    skos:definition "Pore volume fraction."@en , "기공 부피 분율."@ko .
+al:SDAS a skos:Concept ; skos:inScheme al:PropertyKindScheme ;
+    skos:prefLabel "Secondary dendrite arm spacing"@en , "2차 수지상 간격"@ko ;
+    skos:definition "SDAS of cast or printed alloys, in um."@en , "주조·적층 합금의 SDAS(um)."@ko .
+al:Series1xxx a skos:Concept ; skos:inScheme al:SeriesScheme ; skos:notation "1xxx" ;
+    skos:prefLabel "Pure Al (1xxx)"@en , "순수 Al(1xxx)"@ko ;
+    skos:definition "Alloy family by main alloying elements: pure Al (1xxx)."@en , "주 합금 원소로 나눈 합금 계열: 순수 Al(1xxx)."@ko .
+al:Series3xxx a skos:Concept ; skos:inScheme al:SeriesScheme ; skos:notation "3xxx" ;
+    skos:prefLabel "Al-Mn (3xxx)"@en , "Al-Mn계(3xxx)"@ko ;
+    skos:definition "Alloy family by main alloying elements: Al-Mn (3xxx)."@en , "주 합금 원소로 나눈 합금 계열: Al-Mn계(3xxx)."@ko .
+al:Series4xxx a skos:Concept ; skos:inScheme al:SeriesScheme ; skos:notation "4xxx" ;
+    skos:prefLabel "Al-Si wrought (4xxx)"@en , "Al-Si 가공재(4xxx)"@ko ;
+    skos:definition "Alloy family by main alloying elements: wrought Al-Si (4xxx)."@en , "주 합금 원소로 나눈 합금 계열: Al-Si 가공재(4xxx)."@ko .
+al:SeriesCastAlMg a skos:Concept ; skos:inScheme al:SeriesScheme ; skos:notation "cast_AlMg" ;
+    skos:prefLabel "Cast Al-Mg"@en , "Al-Mg 주조 합금"@ko ;
+    skos:definition "Alloy family by main alloying elements: cast Al-Mg (5xx.x)."@en , "주 합금 원소로 나눈 합금 계열: Al-Mg 주조 합금(5xx.x)."@ko .

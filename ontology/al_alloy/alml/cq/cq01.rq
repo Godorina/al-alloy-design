@@ -1,0 +1,13 @@
+# CQ1: Which studies predict a property, of which task type and for which alloy series?
+# params: property=al:UTS
+PREFIX ml: <https://w3id.org/alml#>
+PREFIX al: <https://w3id.org/al6xxx#>
+PREFIX e: <https://w3id.org/alml/entity/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX schema: <https://schema.org/>
+
+SELECT ?study ?title ?taskType (GROUP_CONCAT(DISTINCT ?seriesName; separator=" ") AS ?series) WHERE {
+  ?study a ml:Study ; schema:name ?title ; ml:hasTask ?t .
+  ?t ml:targetProperty ?property ; ml:taskType ?taskType .
+  OPTIONAL { ?t ml:alloySeries/skos:notation ?seriesName }
+} GROUP BY ?study ?title ?taskType ORDER BY ?study

@@ -1,0 +1,44 @@
+# alml v0.1.0 - SHACL rules for extracted studies.
+@prefix ml:     <https://w3id.org/alml#> .
+@prefix al:     <https://w3id.org/al6xxx#> .
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <https://schema.org/> .
+
+ml:StudyShape a sh:NodeShape ; sh:targetClass ml:Study ;
+    sh:property [ sh:path schema:name ; sh:minCount 1 ; sh:message "a study needs its title (schema:name)" ] ;
+    sh:property [ sh:path schema:identifier ; sh:minCount 1 ; sh:message "a study needs its DOI (schema:identifier)" ] ;
+    sh:property [ sh:path ml:hasTask ; sh:minCount 1 ; sh:message "a study needs at least one task" ] .
+
+ml:TaskShape a sh:NodeShape ; sh:targetClass ml:Task ;
+    sh:property [ sh:path ml:taskType ; sh:minCount 1 ; sh:maxCount 1 ; sh:message "a task needs one task type" ] ;
+    sh:property [ sh:path ( ml:taskType skos:inScheme ) ; sh:in ( ml:TaskTypeScheme ) ] ;
+    sh:property [ sh:path ( ml:targetProperty skos:inScheme ) ; sh:in ( al:PropertyKindScheme ) ] ;
+    sh:property [ sh:path ( ml:alloySeries skos:inScheme ) ; sh:in ( al:SeriesScheme ) ] ;
+    sh:property [ sh:path ( ml:usesFeature skos:inScheme ) ; sh:in ( ml:FeatureKindScheme ) ] ;
+    sh:or ( [ sh:path ml:targetProperty ; sh:minCount 1 ] [ sh:path ml:targetText ; sh:minCount 1 ] ) .
+
+ml:DatasetShape a sh:NodeShape ; sh:targetClass ml:Dataset ;
+    sh:property [ sh:path ml:sampleCount ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 1 ] ;
+    sh:property [ sh:path ( ml:dataSource skos:inScheme ) ; sh:in ( ml:DataSourceScheme ) ] .
+
+ml:ModelShape a sh:NodeShape ; sh:targetClass ml:Model ;
+    sh:property [ sh:path ml:algorithm ; sh:minCount 1 ; sh:maxCount 1 ; sh:message "a model needs one algorithm" ] ;
+    sh:property [ sh:path ( ml:algorithm skos:inScheme ) ; sh:in ( ml:AlgorithmScheme ) ] .
+
+ml:ScoreShape a sh:NodeShape ; sh:targetClass ml:Score ;
+    sh:property [ sh:path ml:metric ; sh:minCount 1 ; sh:maxCount 1 ; sh:message "a score needs exactly one metric (ml:MetricScheme)" ] ;
+    sh:property [ sh:path ( ml:metric skos:inScheme ) ; sh:in ( ml:MetricScheme ) ] ;
+    sh:property [ sh:path ml:evaluatedOn ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ( ml:evaluatedOn skos:inScheme ) ; sh:in ( ml:EvaluationScheme ) ] ;
+    sh:property [ sh:path ml:scoreValue ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:decimal ] ;
+    sh:property [ sh:path ml:ofModel ; sh:minCount 1 ; sh:maxCount 1 ; sh:class ml:Model ; sh:message "a score needs the model it evaluates" ] .
+
+ml:FindingShape a sh:NodeShape ; sh:targetClass ml:Finding ;
+    sh:property [ sh:path ml:statement ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ml:hasEvidence ; sh:minCount 1 ; sh:message "a finding needs a quote" ] .
+
+ml:EvidenceShape a sh:NodeShape ; sh:targetClass ml:Evidence ;
+    sh:property [ sh:path ml:quote ; sh:datatype xsd:string ] ;
+    sh:property [ sh:path ml:page ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 1 ] .

@@ -1,0 +1,36 @@
+{
+  "algorithm": "CatBoostRegressor",
+  "params": {
+    "iterations": 800,
+    "learning_rate": 0.05,
+    "depth": 8,
+    "random_seed": 42,
+    "thread_count": 8,
+    "verbose": 0,
+    "allow_writing_files": false
+  },
+  "catboost_version": "1.2.10",
+  "sklearn_version": "1.5.2",
+  "features": "strength_unified 64 columns (phase4_final.prep_X, median imputer)",
+  "selection": "2026-09-24 v1/v2 x ET/XGB/CatBoost, composition-grouped 5-fold x3",
+  "targets": {
+    "UTS": {
+      "data": "v3",
+      "n_rows": 3638,
+      "n_features": 64,
+      "check_pred_row0": 656.6815543220139
+    },
+    "YTS": {
+      "data": "v3",
+      "n_rows": 1827,
+      "n_features": 64,
+      "check_pred_row0": 315.5931867163805
+    },
+    "EL": {
+      "data": "v3",
+      "n_rows": 3475,
+      "n_features": 64,
+      "check_pred_row0": 13.4240253583455
+    }
+  }
+}

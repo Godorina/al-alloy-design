@@ -1,0 +1,15 @@
+# CQ1: Which samples fall in a composition range (wt%), and in which temper and route?
+# params: mgMin=0.6 mgMax=1.0 siMin=0.4 siMax=0.8 cuMax=0.1 includeFlagged=0
+PREFIX al:   <https://w3id.org/al6xxx#>
+PREFIX qudt: <http://qudt.org/schema/qudt/>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+
+SELECT ?sample ?alloy ?mg ?si ?cu ?temper ?route WHERE {
+  ?sample al:ofAlloy ?alloy ; al:hasTemper ?temper .
+  OPTIONAL { ?sample al:hasRoute ?route }
+  ?alloy al:hasConstituent [ al:element "Mg" ; al:massPercent ?mg ] , [ al:element "Si" ; al:massPercent ?si ] .
+  OPTIONAL { ?alloy al:hasConstituent [ al:element "Cu" ; al:massPercent ?cu0 ] }
+  BIND (COALESCE(?cu0, 0.0) AS ?cu)   # an unreported solute counts as absent, as in unified_strength
+  FILTER (?mg >= ?mgMin && ?mg <= ?mgMax && ?si >= ?siMin && ?si <= ?siMax && ?cu <= ?cuMax)
+  FILTER (?includeFlagged = 1 || NOT EXISTS { ?sample al:qualityFlag ?anyFlag })
+} ORDER BY ?sample

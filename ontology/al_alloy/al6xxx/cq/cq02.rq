@@ -1,0 +1,12 @@
+# CQ2: The same alloy in the same temper reported by more than one source: UTS per source.
+PREFIX al:   <https://w3id.org/al6xxx#>
+PREFIX qudt: <http://qudt.org/schema/qudt/>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+
+SELECT ?alloy ?temper ?source ?uts WHERE {
+  { SELECT ?alloy ?temper WHERE {
+      ?s al:ofAlloy ?alloy ; al:hasTemper ?temper ; al:hasPropertyValue/prov:wasDerivedFrom ?src .
+    } GROUP BY ?alloy ?temper HAVING (COUNT(DISTINCT ?src) > 1) }
+  ?sample al:ofAlloy ?alloy ; al:hasTemper ?temper ; al:hasPropertyValue ?v .
+  ?v al:propertyKind al:UTS ; qudt:numericValue ?uts ; prov:wasDerivedFrom ?source .
+} ORDER BY ?alloy ?temper ?source

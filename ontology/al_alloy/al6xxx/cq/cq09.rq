@@ -1,0 +1,13 @@
+# CQ9: Where does each value come from: page, verbatim quote, review status and reviewer, source and its local text? (bind ?sample)
+PREFIX al:   <https://w3id.org/al6xxx#>
+PREFIX qudt: <http://qudt.org/schema/qudt/>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX schema: <https://schema.org/>
+
+SELECT ?sample ?value ?kind ?page ?quote ?reviewStatus ?reviewedBy ?source ?text WHERE {
+  ?sample al:hasPropertyValue ?value .
+  ?value al:propertyKind ?kind ; al:hasEvidence ?ev .
+  ?ev al:quote ?quote ; al:reviewStatus ?reviewStatus .
+  OPTIONAL { ?ev al:page ?page } OPTIONAL { ?ev al:reviewedBy ?reviewedBy }
+  OPTIONAL { ?ev prov:wasQuotedFrom ?source OPTIONAL { ?source schema:contentUrl ?text } }
+} ORDER BY ?sample ?kind

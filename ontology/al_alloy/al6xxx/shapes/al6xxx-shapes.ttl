@@ -1,0 +1,65 @@
+# al6xxx v0.1.0 — SHACL data rules (ported from src/skills/paper-extract/scripts/check_record.py).
+# Rules across two values (YTS <= UTS, range per property kind) are in rules.rq: pyshacl runs SPARQL
+# constraints on rdflib's engine, which took >6 min on the full graph; check.py runs rules.rq in Oxigraph.
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix al:   <https://w3id.org/al6xxx#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix qudt: <http://qudt.org/schema/qudt/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+
+al:SampleShape a sh:NodeShape ; sh:targetClass al:Sample ;
+    sh:property [ sh:path al:ofAlloy ; sh:minCount 1 ; sh:maxCount 1 ; sh:class al:Alloy ;
+                  sh:message "Sample needs exactly one al:ofAlloy" ] ;
+    sh:property [ sh:path al:hasTemper ; sh:maxCount 1 ; sh:message "Sample has at most one al:hasTemper (omit it when not reported)" ] ;
+    sh:property [ sh:path ( al:hasTemper skos:inScheme ) ; sh:in ( al:TemperScheme ) ; sh:message "al:hasTemper must be a TemperScheme concept" ] ;
+    sh:property [ sh:path ( al:hasRoute skos:inScheme ) ; sh:in ( al:RouteScheme ) ; sh:message "al:hasRoute must be a RouteScheme concept" ] .
+
+al:AlloyShape a sh:NodeShape ; sh:targetClass al:Alloy ;
+    sh:property [ sh:path al:hasConstituent ; sh:class al:ElementContent ] ;
+    sh:or ( [ sh:path al:hasConstituent ; sh:minCount 1 ] [ sh:path al:designation ; sh:minCount 1 ] ) ;
+    sh:property [ sh:path al:compKey ; sh:maxCount 1 ; sh:datatype xsd:string ] .
+
+al:ElementContentShape a sh:NodeShape ; sh:targetClass al:ElementContent ;
+    sh:property [ sh:path al:element ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+    sh:property [ sh:path al:massPercent ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:minInclusive 0 ; sh:maxInclusive 25 ; sh:message "massPercent must be one number in 0-25 wt% (hypereutectic cast Al-Si reaches 22)" ] .
+
+al:ProcessStepShape a sh:NodeShape ; sh:targetClass al:ProcessStep ;
+    sh:property [ sh:path al:stepType ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ( al:stepType skos:inScheme ) ; sh:in ( al:StepTypeScheme ) ] ;
+    sh:property [ sh:path ( al:heatingMethod skos:inScheme ) ; sh:in ( al:HeatingScheme ) ] ;
+    sh:property [ sh:path al:stepIndex ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 1 ] ;
+    sh:property [ sh:path al:temperatureC ; sh:maxCount 1 ; sh:minInclusive 20 ; sh:maxInclusive 650 ;
+                  sh:message "temperatureC must be in 20-650 degC" ] ;
+    sh:property [ sh:path al:durationH ; sh:maxCount 1 ; sh:minExclusive 0 ; sh:maxInclusive 2000 ;
+                  sh:message "durationH must be in (0, 2000] h" ] .
+
+al:PropertyValueShape a sh:NodeShape ; sh:targetClass al:PropertyValue ;
+    sh:property [ sh:path al:propertyKind ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ( al:propertyKind skos:inScheme ) ; sh:in ( al:PropertyKindScheme ) ] ;
+    sh:property [ sh:path qudt:unit ; sh:maxCount 1 ] ;
+    sh:xone ( [ sh:path qudt:numericValue ; sh:minCount 1 ; sh:maxCount 1 ]
+              [ sh:path al:ratingValue ; sh:minCount 1 ; sh:maxCount 1 ] ) .
+
+al:ReportedValueShape a sh:NodeShape ; sh:targetClass al:MeasuredValue , al:NominalValue ;
+    sh:property [ sh:path prov:wasDerivedFrom ; sh:minCount 1 ; sh:message "measured/nominal values need a source (prov:wasDerivedFrom)" ] .
+
+al:PredictedValueShape a sh:NodeShape ; sh:targetClass al:PredictedValue ;
+    sh:property [ sh:path prov:wasGeneratedBy ; sh:minCount 1 ; sh:message "predicted values need the run that made them" ] .
+
+al:EvidenceShape a sh:NodeShape ; sh:targetClass al:Evidence ;
+    sh:property [ sh:path al:quote ; sh:datatype xsd:string ] ;
+    sh:property [ sh:path al:page ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 1 ] ;
+    sh:property [ sh:path al:reviewStatus ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ( "reviewed" "unreviewed" ) ] ;
+    sh:property [ sh:path al:reviewedBy ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+    sh:property [ sh:path prov:wasQuotedFrom ; sh:minCount 1 ] .
+
+al:AlloySeriesShape a sh:NodeShape ; sh:targetClass al:Alloy ;
+    sh:property [ sh:path ( al:inSeries skos:inScheme ) ; sh:in ( al:SeriesScheme ) ] .
+
+al:CorrosionTestShape a sh:NodeShape ; sh:targetClass al:CorrosionTest ;
+    sh:property [ sh:path al:testMethod ; sh:minCount 1 ; sh:maxCount 1 ; sh:message "a corrosion test needs one method" ] ;
+    sh:property [ sh:path al:environment ; sh:maxCount 1 ] ;
+    sh:property [ sh:path al:referenceElectrode ; sh:maxCount 1 ] ;
+    sh:property [ sh:path [ sh:inversePath al:underTest ] ; sh:minCount 1 ; sh:message "a corrosion test must have produced a value" ] .

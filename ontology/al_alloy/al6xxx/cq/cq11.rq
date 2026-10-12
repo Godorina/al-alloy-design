@@ -1,0 +1,23 @@
+# CQ11: Measured corrosion values of one kind with the test that produced them, comparable across papers:
+# potentials also in V vs SCE (Ag/AgCl in saturated KCl = SCE + 0.044 V, SHE = SCE + 0.241 V; another or no reference
+# electrode leaves vsSCE empty). Compare only rows of one method and medium.
+# params: kind=al:CorrosionPotential
+PREFIX al:     <https://w3id.org/al6xxx#>
+PREFIX qudt:   <http://qudt.org/schema/qudt/>
+PREFIX prov:   <http://www.w3.org/ns/prov#>
+PREFIX schema: <https://schema.org/>
+PREFIX rdfs:   <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?sample ?label ?series ?value ?unit ?vsSCE ?method ?medium ?reference ?source WHERE {
+  ?sample al:hasPropertyValue ?v ; al:ofAlloy ?alloy .
+  ?v a al:MeasuredValue ; al:propertyKind ?kind ; qudt:numericValue ?value ; qudt:unit ?unit ; al:underTest ?t .
+  ?t al:testMethod ?method .
+  OPTIONAL { ?t al:environment ?medium } OPTIONAL { ?t al:referenceElectrode ?reference }
+  OPTIONAL { ?alloy al:inSeries ?series } OPTIONAL { ?sample rdfs:label ?label }
+  OPTIONAL { ?v prov:wasDerivedFrom ?d . ?d schema:identifier ?source }
+  BIND (IF(?unit = <http://qudt.org/vocab/unit/MilliV>, ?value / 1000, ?value) AS ?volts)
+  BIND (IF(REGEX(?reference, "calomel|(^|[^a-z])sce([^a-z]|$)", "i"), 0.0,
+        IF(REGEX(?reference, "ag\\s*/\\s*agcl|silver chloride", "i"), -0.044,
+        IF(REGEX(?reference, "(^|[^a-z])she([^a-z]|$)|standard hydrogen", "i"), -0.241, ?noReference))) AS ?offset)
+  BIND (IF(?kind IN (al:CorrosionPotential, al:PittingPotential), ?volts + ?offset, ?notAPotential) AS ?vsSCE)
+} ORDER BY ?method ?medium ?vsSCE ?value

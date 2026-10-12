@@ -1,0 +1,19 @@
+# Cross-value rules SHACL-core cannot express; run by tools/check.py in Oxigraph. Each row is a violation.
+PREFIX al:   <https://w3id.org/al6xxx#>
+PREFIX qudt: <http://qudt.org/schema/qudt/>
+SELECT ?focus ?message WHERE {
+  {
+    ?focus al:hasPropertyValue ?y , ?u .
+    ?y al:propertyKind al:YTS ; qudt:numericValue ?yv .
+    ?u al:propertyKind al:UTS ; qudt:numericValue ?uv .
+    FILTER NOT EXISTS { ?y a al:PredictedValue }
+    FILTER NOT EXISTS { ?u a al:PredictedValue }
+    FILTER (?yv > ?uv)
+    BIND ("YTS exceeds UTS" AS ?message)
+  } UNION {
+    ?focus al:propertyKind ?k ; qudt:numericValue ?v .
+    FILTER ((?k = al:UTS && (?v < 30 || ?v > 900)) || (?k = al:YTS && (?v < 10 || ?v > 850)) ||
+            (?k = al:EL && (?v < 0 || ?v > 60)))
+    BIND ("value outside the plausible range for its property kind" AS ?message)
+  }
+}
