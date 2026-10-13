@@ -21,13 +21,35 @@
 
 | 항목 | 내용 |
 |---|---|
-| 지원 환경 | Windows 10/11(PowerShell 7 권장: `winget install Microsoft.PowerShell`), WSL2 의 Linux, Linux, macOS. `bootstrap.py` 가 감지합니다. **Windows 와 WSL 은 아직 실제로 시험하지 못했습니다.** 막히면 오류 메시지를 알려 주세요 |
+| 지원 환경 | Windows 10/11(PowerShell 7 권장: `winget install Microsoft.PowerShell`), WSL2 의 Linux, Linux, macOS. `bootstrap.py` 가 감지합니다. WSL 이 없는 Windows 는 `install-wsl.ps1` 이 WSL 부터 만들어 줍니다 (1.0). **WSL 설치 과정은 Windows 11 Home 에서 확인했고, 네이티브 Windows 와 WSL 위의 설계 루프는 아직 시험하지 못했습니다.** 막히면 오류 메시지를 알려 주세요 |
 | 한글 깨짐 방지 | 새 PowerShell 마다 `$env:PYTHONUTF8 = "1"` (영구 적용: `setx PYTHONUTF8 1` 후 새 창). `bootstrap.py` 는 자동으로 설정합니다 |
 | 명령 표기 | 이 README 의 `.venv\Scripts\python.exe` 는 WSL/Linux/macOS 에서는 `.venv/bin/python` 으로 읽으세요 |
 | 결과의 성격 | 강도(UTS/YTS)·연신율은 **예측값**입니다. 부식은 예측하지 않고 **가장 가까운 합금의 실측·공칭 값**을 보여 줍니다 |
 | 모델 크기 | 모델이 작으면 설계 루프가 끝까지 돌지 않을 수 있습니다 (아래 2.5, 5장) |
 
 ## 1. 준비물
+
+### 1.0 Windows 에서 WSL 부터 한 번에 (권장)
+
+WSL 이 없는 Windows PC 라면 PowerShell 에서 아래 두 줄이면 됩니다. git 도 파이썬도 필요 없습니다.
+
+```powershell
+irm https://raw.githubusercontent.com/Godorina/al-alloy-design/windows-support/install-wsl.ps1 -OutFile install-wsl.ps1
+powershell -ExecutionPolicy Bypass -File .\install-wsl.ps1
+```
+
+| 단계 | 하는 일 |
+|---|---|
+| 1. 사전 점검 | Windows 빌드(19041 이상), 가상화, 디스크, 메모리 |
+| 2. Windows 기능 | WSL, 가상 머신 플랫폼을 켭니다 (관리자 권한 창에서 `예`). 재부팅이 필요하면 `shutdown /r` 로 재부팅하고, 로그인하면 **자동으로 이어서** 실행됩니다 |
+| 3. 배포판 | Ubuntu 를 설치합니다 |
+| 4. 사용자 | 리눅스 계정을 만들고 기본 사용자로 지정합니다. **비밀번호만 직접 입력**합니다 |
+| 5. 메모리 | `%UserProfile%\.wslconfig` 의 `memory` 를 RAM 의 약 65% 로 맞춥니다 (WSL 기본값은 50%) |
+| 6. 프로젝트 | WSL 안에서 apt 패키지 → `git clone` (`~/al-alloy-design`) → `python3 bootstrap.py --yes` |
+
+- 이미 끝난 단계는 건너뛰므로 중간에 멈춰도 같은 명령을 다시 실행하면 됩니다. 로그: `%LOCALAPPDATA%\al-alloy-design\install-wsl.log`
+- 옵션: `-User 이름`, `-MemoryGB 20`, `-ModelRepo unsloth/Qwen3-14B-GGUF`, `-Quant Q4_K_M`, `-SkipBootstrap`(WSL 준비와 clone 까지만), `-Yes`(묻지 않음, 재부팅 포함)
+- 끝나면 시작 메뉴의 **Ubuntu** 를 열고 `cd ~/al-alloy-design` 후 3장으로 가세요. WSL 안에서는 `.venv\Scripts\python.exe` 대신 `.venv/bin/python`, `python` 대신 `python3` 입니다.
 
 ### 1.1 도구 설치
 
@@ -77,7 +99,7 @@ python bootstrap.py --yes              # 묻지 않고 진행
 |---|---|
 | 환경 (Windows / WSL1·2 / Linux / macOS) | 환경에 맞는 설치 방법을 고름 (winget / apt + 소스 빌드 / brew). WSL1 이면 경고, `/mnt/` 아래이면 느리다고 경고 |
 | NVIDIA GPU, VRAM | 있으면 VRAM 을, 없으면 메모리의 60% 를 "모델 예산"으로 계산. WSL/Linux 에서 `nvcc` 가 있으면 CUDA 로 빌드, 없으면 CPU 로 빌드하고 안내 |
-| 메모리 | 예산이 24GB 이상이면 Qwen3.8-27B(약 15GB + 컨텍스트)를 지정, 미만이면 llmfit 이 이 PC 에 맞다고 고른 1순위 모델을 묻지 않고 받음 (직접 고르려면 `python llm/pick.py` 를 따로 실행) |
+| 메모리 | 예산이 24GB 이상이면 Qwen3.8-27B(약 15GB + 컨텍스트), 10~24GB 면 Qwen3-14B(`unsloth/Qwen3-14B-GGUF`, 약 9GB), 그보다 작으면 llmfit 이 이 PC 에 맞다고 고른 1순위 모델을 묻지 않고 받음 (직접 고르려면 `python llm/pick.py` 를 따로 실행). 모델 서버 동시 요청 수는 24GB 미만이면 1, 이상이면 2 (`--slots` 로 지정) |
 | 설치된 도구 | git, uv, llama-server, llmfit 중 없는 것만 설치. Windows 는 설치 후 PATH 갱신을 위해 새 PowerShell 에서 같은 명령을 다시 실행해야 함 |
 
 모델을 직접 지정하려면 옵션을 그대로 붙입니다 (나머지 옵션은 `llm/pick.py` 로 전달됩니다).
@@ -236,6 +258,11 @@ LLM_CTX_PER_SLOT=49152
 | `llmfit` 이 없다고 나옴 | 미설치 | `pick.py` 가 설치 여부를 물어봅니다. 직접: `scoop install llmfit` 또는 `uv tool install llmfit` |
 | 8080 포트가 사용 중 | 다른 프로그램이 사용 | `.venv\Scripts\python.exe llm/serve.py start --port 8090` (그러면 `.env` 의 주소도 자동 갱신) |
 | 다운로드가 멈춤 | 네트워크 | 같은 `pick.py` 명령을 다시 실행 (처음부터 받습니다) |
+| (WSL) 재부팅했는데 계속 "다시 시작하면 변경 사항이 적용됩니다" | 시작 메뉴의 `다시 시작` 이 기능 적용을 미룸 | PowerShell 에서 `shutdown /r /t 0`. `install-wsl.ps1` 은 이렇게 재부팅합니다 |
+| (WSL) `wsl` 명령이 아무 반응 없이 멈춤 | Ubuntu 첫 실행 화면(사용자 이름·동의 질문)이 입력을 기다리는 중 | 열린 Ubuntu 창에서 질문에 답하거나 창을 닫고 `wsl --shutdown`. `install-wsl.ps1` 은 첫 실행 화면을 끄고 계정을 직접 만듭니다 |
+| (WSL) apt 가 `Release file ... is not valid yet` | 미러의 Release 파일 날짜가 미래로 찍힘 (PC 시계 문제가 아님) | `sudo apt-get -o Acquire::Max-FutureTime=86400 update`. `bootstrap.py`, `install-wsl.ps1` 은 이 옵션을 씁니다 |
+| (WSL) `python: command not found` | Ubuntu 에는 `python` 명령이 없음 | `python3 bootstrap.py` 로 실행 (설치 후에는 `.venv/bin/python`) |
+| (WSL) 모델이 메모리에 안 들어감, 서버가 죽음 | WSL 기본 메모리 상한이 RAM 의 50% | `%UserProfile%\.wslconfig` 에 `[wsl2]` / `memory=20GB` 후 `wsl --shutdown` |
 
 ## 6. 정리하기
 
@@ -249,6 +276,7 @@ uv cache prune                          # 쓰지 않는 uv 캐시 정리 (선택
 ## 7. 구조, 데이터, 라이선스
 
 ```
+install-wsl.ps1            Windows: WSL2 + Ubuntu 를 만들고 그 안에서 bootstrap.py 까지 실행
 bootstrap.py               환경 감지 + 한 번에 설치 (setup.sh 는 macOS/Linux 용 간단판)
 design.py                  설계 실행 (CLI)
 llm/                       pick.py(모델 추천·다운로드), serve.py(서버), selfcheck.py(품질 점검)

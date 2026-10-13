@@ -5,9 +5,11 @@
   python3 bootstrap.py --detect-only   감지 결과만 출력
   python3 bootstrap.py --yes           묻지 않고 진행
   python3 bootstrap.py --rebuild-llama llama.cpp 를 다시 빌드 (Linux/WSL, CUDA toolkit 을 나중에 설치했을 때)
+  python3 bootstrap.py --slots 1       모델 서버의 동시 요청 수 (기본: 메모리가 작으면 1, 아니면 2)
 
 그 밖의 옵션은 llm/pick.py 로 넘어갑니다 (예: --repo unsloth/Qwen3.8-27B-GGUF --quant Q4_K_M, --auto).
 표준 라이브러리만 씁니다. Windows 에 파이썬이 없으면: winget install astral-sh.uv 후 `uv run bootstrap.py`.
+WSL 자체가 없으면 Windows 에서 install-wsl.ps1 을 먼저 실행하세요 (WSL 설치 → Ubuntu → 이 스크립트까지 한 번에).
 """
 from __future__ import annotations
 
@@ -28,6 +30,10 @@ HOME = Path.home()
 WIN = platform.system() == "Windows"
 PORT = 8080
 MODEL_REPO, MODEL_QUANT, MODEL_NEEDS_GB = "unsloth/Qwen3.8-27B-GGUF", "Q4_K_M", 24
+# 예산이 24GB 미만일 때의 기본 모델: 도구 호출이 되는 가장 작은 현실적인 크기 (Q4_K_M 약 9GB)
+SMALL_REPO, SMALL_NEEDS_GB = "unsloth/Qwen3-14B-GGUF", 10
+# 일부 Ubuntu 미러는 Release 파일 날짜가 몇 분~몇십 분 미래로 찍혀 "not valid yet" 으로 apt update 가 실패합니다
+APT_OPTS = "-o Acquire::Max-FutureTime=86400"
 EXTRA_PATHS = [HOME / ".local" / "bin", HOME / ".cargo" / "bin", HOME / "llama.cpp" / "build" / "bin", Path("/usr/local/cuda/bin")]
 TOOLS = ["git", "curl", "cmake", "g++", "uv", "llmfit", "llama-server", "nvcc", "brew", "winget", "apt-get"]
 
@@ -133,7 +139,7 @@ def tool_plan(env: dict[str, Any], rebuild_llama: bool) -> tuple[list[tuple[str,
     if kind in ("linux", "wsl"):
         missing = [pkg for pkg, binary in (("git", "git"), ("curl", "curl"), ("cmake", "cmake"), ("build-essential", "g++")) if not tools[binary]]
         if missing and tools["apt-get"]:
-            steps.append((f"필수 패키지 설치 ({', '.join(missing)})", [f"sudo apt-get update && sudo apt-get install -y {' '.join(missing)}"]))
+            steps.append((f"필수 패키지 설치 ({', '.join(missing)})", [f"sudo apt-get {APT_OPTS} update && sudo apt-get install -y {' '.join(missing)}"]))
         elif missing:
             notes.append(f"apt 가 없는 배포판입니다. 직접 설치하세요: {', '.join(missing)}")
     if kind == "macos" and not tools["git"]:
@@ -176,7 +182,12 @@ def tool_plan(env: dict[str, Any], rebuild_llama: bool) -> tuple[list[tuple[str,
     return steps, notes
 
 
-def project_plan(env: dict[str, Any], pick_args: list[str], server_up: bool) -> tuple[list[tuple[str, list[str]]], list[str]]:
+def default_slots(env: dict[str, Any]) -> int:
+    """동시 요청 수. 슬롯마다 컨텍스트(KV 캐시) 메모리가 따로 잡히므로 메모리가 작으면 1 개만 씁니다."""
+    return 2 if budget_gb(env) >= MODEL_NEEDS_GB else 1
+
+
+def project_plan(env: dict[str, Any], pick_args: list[str], server_up: bool, slots: int) -> tuple[list[tuple[str, list[str]]], list[str]]:
     py = q(venv_python())
     steps: list[tuple[str, list[str]]] = []
     notes: list[str] = []
@@ -188,15 +199,21 @@ def project_plan(env: dict[str, Any], pick_args: list[str], server_up: bool) -> 
     if pick_args or not (ROOT / ".llm" / "selection.json").exists():
         args = pick_args
         if not args:
-            if budget_gb(env) >= MODEL_NEEDS_GB:
+            budget = budget_gb(env)
+            if budget >= MODEL_NEEDS_GB:
                 args = ["--repo", MODEL_REPO, "--quant", MODEL_QUANT]
+            elif budget >= SMALL_NEEDS_GB:
+                args = ["--repo", SMALL_REPO, "--quant", MODEL_QUANT]
+                notes.append(f"모델 예산이 약 {budget}GB 라서 권장 27B 대신 Qwen3-14B(Q4_K_M, 약 9GB)를 받습니다. "
+                             "설계 품질은 27B 보다 낮을 수 있으니 selfcheck 결과를 확인하세요.")
             else:
                 args = ["--auto"]
-                notes.append(f"모델 예산이 약 {budget_gb(env)}GB 라서 권장 27B 대신 llmfit 이 이 PC 에 맞다고 고른 1순위 모델을 받습니다. "
-                             "작은 모델은 설계 루프가 끝까지 안 돌 수 있으니 selfcheck 결과를 확인하세요.")
+                notes.append(f"모델 예산이 약 {budget}GB 라서 llmfit 이 이 PC 에 맞다고 고른 1순위 모델을 받습니다. "
+                             "작은 모델은 설계 루프가 끝까지 안 돌 수 있으니 selfcheck 결과를 확인하세요."
+                             + (" WSL 이면 .wslconfig 의 memory 를 늘리면 예산이 커집니다." if env["kind"] == "wsl" else ""))
         steps.append(("모델 선택·다운로드", [f"{py} llm/pick.py {' '.join(map(q, args))}".strip()]))
     if not server_up:
-        steps.append(("모델 서버 켜기", [f"{py} llm/serve.py start"]))
+        steps.append((f"모델 서버 켜기 (동시 요청 {slots})", [f"{py} llm/serve.py start --slots {slots}"]))
     steps.append(("품질 점검 (selfcheck)", [f"{py} llm/selfcheck.py"]))
     return steps, notes
 
@@ -240,6 +257,7 @@ def main() -> None:
     ap.add_argument("--detect-only", action="store_true")
     ap.add_argument("-y", "--yes", action="store_true")
     ap.add_argument("--rebuild-llama", action="store_true")
+    ap.add_argument("--slots", type=int, help="모델 서버 동시 요청 수 (기본: 메모리가 작으면 1, 아니면 2)")
     args, pick_args = ap.parse_known_args()
 
     os.environ["PYTHONUTF8"] = "1"
@@ -250,7 +268,7 @@ def main() -> None:
         return
 
     tool_steps, notes = tool_plan(env, args.rebuild_llama)
-    proj_steps, proj_notes = project_plan(env, pick_args, server_healthy())
+    proj_steps, proj_notes = project_plan(env, pick_args, server_healthy(), args.slots or default_slots(env))
     notes += proj_notes
     print("\n할 일")
     for i, (title, cmds) in enumerate(tool_steps + proj_steps, 1):
