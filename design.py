@@ -37,7 +37,7 @@ TASK = (
 def load_env() -> dict[str, str]:
     path = ROOT / ".env"
     if not path.exists():
-        sys.exit("오류: .env 가 없습니다. 모델 서버를 먼저 켜세요: .venv/bin/python llm/serve.py start")
+        sys.exit("오류: .env 가 없습니다. 모델 서버를 먼저 켜세요: python llm/serve.py start (venv 의 파이썬으로)")
     pairs = (line.split("=", 1) for line in path.read_text(encoding="utf-8").splitlines() if "=" in line and not line.startswith("#"))
     return {k.strip(): v.strip() for k, v in pairs}
 
@@ -46,7 +46,7 @@ def check_server(base: str) -> None:
     try:
         urllib.request.urlopen(f"{base}/v1/models", timeout=5)
     except (urllib.error.URLError, OSError):
-        sys.exit(f"오류: 모델 서버({base})가 응답하지 않습니다. 켜는 방법: .venv/bin/python llm/serve.py start")
+        sys.exit(f"오류: 모델 서버({base})가 응답하지 않습니다. 켜는 방법: python llm/serve.py start (venv 의 파이썬으로)")
 
 
 def read_request(args: argparse.Namespace) -> str:
