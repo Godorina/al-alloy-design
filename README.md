@@ -1,7 +1,7 @@
-# Al Alloy Design — 알루미늄 합금 역설계 (CLI, Windows 판)
+# Al Alloy Design — 알루미늄 합금 역설계 (CLI)
 
 로컬 LLM과 실측 데이터로 "원하는 물성의 알루미늄 합금 조성"을 찾아 주는 도구입니다.
-이 브랜치(`windows-support`)는 **Windows(PowerShell 7)** 용입니다. macOS/Linux 는 `main` 브랜치의 README 를 보세요. 터미널 명령 하나로 실행합니다. (웹 화면이 필요하면 [docs/webui.md](docs/webui.md) — 선택 사항)
+이 브랜치(`windows-support`)의 `bootstrap.py` 는 **Windows / WSL / Linux / macOS 를 스스로 감지**해서 그 환경에 맞게 설치합니다. 터미널 명령 하나로 실행합니다. (웹 화면이 필요하면 [docs/webui.md](docs/webui.md) — 선택 사항)
 
 ```
 요구사항(문장)
@@ -21,8 +21,9 @@
 
 | 항목 | 내용 |
 |---|---|
-| 지원 환경 | Windows 10/11 + PowerShell 7 (`winget install Microsoft.PowerShell`, 실행은 `pwsh`). **실제 윈도우에서는 아직 시험하지 못했습니다.** 막히면 오류 메시지를 알려 주세요 |
-| 한글 깨짐 방지 | 새 PowerShell 마다 `$env:PYTHONUTF8 = "1"` (영구 적용: `setx PYTHONUTF8 1` 후 새 창). `setup.ps1` 은 자동으로 설정합니다 |
+| 지원 환경 | Windows 10/11(PowerShell 7 권장: `winget install Microsoft.PowerShell`), WSL2 의 Linux, Linux, macOS. `bootstrap.py` 가 감지합니다. **Windows 와 WSL 은 아직 실제로 시험하지 못했습니다.** 막히면 오류 메시지를 알려 주세요 |
+| 한글 깨짐 방지 | 새 PowerShell 마다 `$env:PYTHONUTF8 = "1"` (영구 적용: `setx PYTHONUTF8 1` 후 새 창). `bootstrap.py` 는 자동으로 설정합니다 |
+| 명령 표기 | 이 README 의 `.venv\Scripts\python.exe` 는 WSL/Linux/macOS 에서는 `.venv/bin/python` 으로 읽으세요 |
 | 결과의 성격 | 강도(UTS/YTS)·연신율은 **예측값**입니다. 부식은 예측하지 않고 **가장 가까운 합금의 실측·공칭 값**을 보여 줍니다 |
 | 모델 크기 | 모델이 작으면 설계 루프가 끝까지 돌지 않을 수 있습니다 (아래 2.5, 5장) |
 
@@ -30,11 +31,13 @@
 
 ### 1.1 도구 설치
 
+`bootstrap.py`(2.2)가 빠진 도구를 감지해서 설치해 줍니다. 직접 설치하려면 아래 표를 따르세요 (Windows 기준; WSL/Linux 는 `apt install git curl cmake build-essential` 과 uv 설치 스크립트, llama.cpp 는 소스 빌드).
+
 | 도구 | 용도 | 설치 명령 |
 |---|---|---|
 | git | 저장소 내려받기 | `winget install Git.Git` |
 | uv | 파이썬 환경 | `winget install astral-sh.uv` (설치 후 새 터미널) |
-| llama.cpp | 모델 서버(`llama-server`) | `winget install llama.cpp` (패키지를 못 찾으면 `winget search llama.cpp` 또는 <https://github.com/ggml-org/llama.cpp/releases> 의 Windows 빌드: NVIDIA 는 CUDA, 그 외는 Vulkan) |
+| llama.cpp | 모델 서버(`llama-server`) | `winget install --id ggml.llamacpp` (못 찾으면 `winget search llama.cpp` 또는 <https://github.com/ggml-org/llama.cpp/releases> 의 Windows 빌드: NVIDIA 는 CUDA, 그 외는 Vulkan) |
 | llmfit | 내 PC 에 맞는 모델 추천 | 따로 설치하지 않아도 됩니다. 2.2 단계에서 없으면 설치할지 물어봅니다 (`scoop install llmfit` 또는 `uv tool install llmfit`) |
 
 설치 확인:
@@ -60,10 +63,27 @@ cd al-alloy-design
 
 ### 2.2 한 번에 설치
 
-권장 모델 Qwen3.8-27B(약 15GB)로 설치:
+먼저 이 PC 를 감지해 결과와 "할 일"을 보여 주고, 확인(`Y`)하면 진행합니다.
 
 ```powershell
-.\setup.ps1 --repo unsloth/Qwen3.8-27B-GGUF --quant Q4_K_M
+python bootstrap.py                    # Windows 에 python 이 없으면: winget install astral-sh.uv 후 uv run bootstrap.py
+python bootstrap.py --detect-only      # 감지 결과만 보기
+python bootstrap.py --yes              # 묻지 않고 진행
+```
+
+감지하는 것과 그에 따른 동작:
+
+| 감지 | 동작 |
+|---|---|
+| 환경 (Windows / WSL1·2 / Linux / macOS) | 환경에 맞는 설치 방법을 고름 (winget / apt + 소스 빌드 / brew). WSL1 이면 경고, `/mnt/` 아래이면 느리다고 경고 |
+| NVIDIA GPU, VRAM | 있으면 VRAM 을, 없으면 메모리의 60% 를 "모델 예산"으로 계산. WSL/Linux 에서 `nvcc` 가 있으면 CUDA 로 빌드, 없으면 CPU 로 빌드하고 안내 |
+| 메모리 | 예산이 20GB 이상이면 Qwen3.8-27B(약 15GB)를 자동 지정, 미만이면 llmfit 순위에서 직접 고르게 함 |
+| 설치된 도구 | git, uv, llama-server, llmfit 중 없는 것만 설치. Windows 는 설치 후 PATH 갱신을 위해 새 PowerShell 에서 같은 명령을 다시 실행해야 함 |
+
+모델을 직접 지정하려면 옵션을 그대로 붙입니다 (나머지 옵션은 `llm/pick.py` 로 전달됩니다).
+
+```powershell
+python bootstrap.py --repo unsloth/Qwen3.8-27B-GGUF --quant Q4_K_M
 ```
 
 - `--repo` 는 Hugging Face 의 GGUF 저장소를 직접 지정하는 옵션입니다 (이 모델은 llmfit 순위 목록에 나오지 않습니다).
@@ -72,7 +92,7 @@ cd al-alloy-design
 가벼운 모델로 먼저 시험해 보려면 (설계 루프는 끝까지 돌지 않는 경우가 많습니다, 2.5 참고):
 
 ```powershell
-.\setup.ps1 --quant Q4_K_M       # llmfit 순위에서 번호 선택 (예: Qwen3-4B)
+python bootstrap.py --quant Q4_K_M       # llmfit 순위에서 번호 선택 (예: Qwen3-4B)
 ```
 
 실행되는 일은 4단계입니다. `--repo` 없이 실행하면 중간에 "Download which one? [1]" 이 나오고, 순위표의 번호를 입력합니다.
@@ -86,7 +106,7 @@ cd al-alloy-design
 
 끝나면 `PASS` 또는 `WARN`/`FAIL` 한 줄이 나옵니다 (의미는 2.4).
 
-### 2.3 단계별로 직접 하기 (setup.ps1 를 쓰지 않을 때)
+### 2.3 단계별로 직접 하기 (bootstrap.py 를 쓰지 않을 때)
 
 ```powershell
 # (1) 파이썬 환경
@@ -229,7 +249,7 @@ uv cache prune                          # 쓰지 않는 uv 캐시 정리 (선택
 ## 7. 구조, 데이터, 라이선스
 
 ```
-setup.ps1                   한 번에 설치 (Windows; macOS/Linux 는 main 의 setup.sh)
+bootstrap.py               환경 감지 + 한 번에 설치 (setup.sh 는 macOS/Linux 용 간단판)
 design.py                  설계 실행 (CLI)
 llm/                       pick.py(모델 추천·다운로드), serve.py(서버), selfcheck.py(품질 점검)
 src/mcp/host/              모델 ↔ 스킬 ↔ KG 도구를 잇는 에이전트 루프
