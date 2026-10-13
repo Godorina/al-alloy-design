@@ -21,7 +21,7 @@
 
 | 항목 | 내용 |
 |---|---|
-| 지원 환경 | macOS, Linux. Windows 는 지원하지 않습니다 (WSL2 는 확인하지 않았습니다) |
+| 지원 환경 | macOS, Linux. Windows(PowerShell) 는 [부록 A](#부록-a-windows-powershell) 의 방법으로 쓸 수 있지만 **실제 윈도우에서는 아직 시험하지 못했습니다**. WSL2 는 확인하지 않았습니다 |
 | 결과의 성격 | 강도(UTS/YTS)·연신율은 **예측값**입니다. 부식은 예측하지 않고 **가장 가까운 합금의 실측·공칭 값**을 보여 줍니다 |
 | 모델 크기 | 모델이 작으면 설계 루프가 끝까지 돌지 않을 수 있습니다 (아래 2.5, 5장) |
 
@@ -245,3 +245,17 @@ scripts/strip_quotes.py    KG 에서 논문 원문 인용을 제거하는 도구
 - `data/` 는 공개된 강도 데이터(Mendeley, Ji, Hu, Mo 등)를 합친 표와 JSM 부식 표, Tamura 2020 보충자료입니다. 출처별 재배포 조건은 확인하지 않았으니 이 저장소 밖에서 쓸 때는 각 출처의 조건을 확인하세요.
 - 지식그래프에는 논문에서 추출한 값과 DOI·페이지가 있고, 논문 원문 인용은 제거했습니다.
 - 모델 가중치는 Hugging Face 에서 각 모델의 라이선스에 따라 내려받습니다 (`pick.py` 목록에서 확인).
+
+## 부록 A. Windows (PowerShell)
+
+macOS/Linux 와 달라지는 부분만 적습니다. 윈도우 PC 에서 직접 시험하지는 못했으니, 막히면 오류 메시지를 알려 주세요.
+
+| 항목 | macOS / Linux | Windows |
+|---|---|---|
+| 도구 설치 | brew / apt | `winget install Git.Git astral-sh.uv` 와 `winget install llama.cpp` (패키지 ID 는 `winget search llama.cpp` 로 확인), llmfit 은 `scoop install llmfit` 또는 `uv tool install llmfit` |
+| 한 번에 설치 | `./setup.sh ...` | `.\setup.ps1 ...` (막히면 `Set-ExecutionPolicy -Scope Process Bypass`) |
+| 파이썬 | `.venv/bin/python` | `.venv\Scripts\python.exe` (이 README 의 모든 `.venv/bin/python` 을 이것으로 바꿔 읽으세요) |
+| 로그 보기 | `tail -f .llm/server.log` | `Get-Content .llm\server.log -Wait` |
+| 한글 깨짐 방지 | 필요 없음 | 새 PowerShell 마다 `$env:PYTHONUTF8 = "1"` (영구 적용: `setx PYTHONUTF8 1` 후 새 창) |
+
+GPU 사용 여부는 설치한 llama.cpp 빌드(CUDA/Vulkan 등)에 달려 있습니다. `.llm\server.log` 에서 확인하세요.

@@ -12,12 +12,25 @@ import json
 import os
 import signal
 import subprocess
+import sys
 import time
 import urllib.request
 
 from common import MIN_CONTEXT, PORT, ROOT, SELECTION, SERVER_LOG, SERVER_PID, STATE, die, require, write_env
 
 MODEL_ALIAS = "local"
+WINDOWS = sys.platform == "win32"
+
+
+def alive(pid: int) -> bool:
+    if WINDOWS:  # os.kill(pid, 0) would terminate the process on Windows
+        out = subprocess.run(["tasklist", "/FI", f"PID eq {pid}", "/NH", "/FO", "CSV"], capture_output=True, text=True).stdout
+        return f'"{pid}"' in out
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    return True
 
 
 def healthy(port: int) -> bool:
@@ -32,11 +45,7 @@ def running_pid() -> int | None:
     if not SERVER_PID.exists():
         return None
     pid = int(SERVER_PID.read_text())
-    try:
-        os.kill(pid, 0)
-    except OSError:
-        return None
-    return pid
+    return pid if alive(pid) else None
 
 
 def start(args: argparse.Namespace) -> None:
@@ -47,7 +56,7 @@ def start(args: argparse.Namespace) -> None:
     gguf = ROOT / json.loads(SELECTION.read_text())["gguf"]
     if not gguf.exists():
         die(f"{gguf} is missing; rerun `python llm/pick.py`")
-    binary = require("llama-server", "Install llama.cpp: `brew install llama.cpp` (macOS) or see https://github.com/ggml-org/llama.cpp")
+    binary = require("llama-server", "Install llama.cpp: `brew install llama.cpp` (macOS), `winget install llama.cpp` (Windows) or see https://github.com/ggml-org/llama.cpp")
     ctx = max(args.ctx_per_slot, MIN_CONTEXT) * args.slots
     STATE.mkdir(exist_ok=True)
     command = [
@@ -56,7 +65,8 @@ def start(args: argparse.Namespace) -> None:
         "--host", "127.0.0.1", "--port", str(args.port), "--no-webui",
     ]
     with SERVER_LOG.open("w") as log:
-        proc = subprocess.Popen(command, stdout=log, stderr=log, start_new_session=True)
+        flags = subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == "win32" else 0
+        proc = subprocess.Popen(command, stdout=log, stderr=log, creationflags=flags, start_new_session=not WINDOWS)
     SERVER_PID.write_text(str(proc.pid))
     print(f"starting llama-server (pid {proc.pid}), log: {SERVER_LOG.relative_to(ROOT)}")
     deadline = time.monotonic() + args.wait
@@ -78,7 +88,10 @@ def stop() -> None:
     if pid is None:
         print("not running")
     else:
-        os.killpg(os.getpgid(pid), signal.SIGTERM)
+        if WINDOWS:
+            subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True)
+        else:
+            os.killpg(os.getpgid(pid), signal.SIGTERM)
         print(f"stopped pid {pid}")
     SERVER_PID.unlink(missing_ok=True)
 

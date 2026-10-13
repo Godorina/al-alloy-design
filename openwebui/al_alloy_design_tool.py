@@ -25,7 +25,7 @@ def _environment() -> dict[str, str]:
 
 
 def _python() -> str:
-    venv = PROJECT_DIR / ".venv" / "bin" / "python"
+    venv = PROJECT_DIR / ".venv" / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
     return str(venv) if venv.exists() else sys.executable
 
 

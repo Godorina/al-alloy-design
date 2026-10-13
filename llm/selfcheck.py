@@ -60,7 +60,7 @@ def tool_call_ok(base: str, model: str) -> bool:
 
 
 def validate(step: list[str], env: dict[str, str]) -> None:
-    done = subprocess.run([sys.executable, str(VALIDATE), *step], cwd=ROOT, env=env, capture_output=True, text=True)
+    done = subprocess.run([sys.executable, str(VALIDATE), *step], cwd=ROOT, env=env, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if done.returncode != 0:
         die(f"validate.py {step[0]} failed:\n{done.stderr[-1500:]}")
 
@@ -75,7 +75,7 @@ def agent_ok(env: dict[str, str]) -> bool:
     fresh = sorted(set(SESSIONS.glob("*.jsonl")) - before)
     if not fresh:
         return False
-    return session_succeeded([json.loads(line) for line in fresh[-1].read_text().splitlines()])
+    return session_succeeded([json.loads(line) for line in fresh[-1].read_text(encoding="utf-8").splitlines()])
 
 
 def session_succeeded(events: list[dict]) -> bool:
@@ -95,7 +95,7 @@ def icl_report(base: str, env: dict[str, str], queries: int) -> dict:
     validate(["plan", *common, "--limit", str(queries), "--draws", "1", "--conditions", "B", "--hint", "catboost"], env)
     validate(["run", *common, "--url", base, "--force"], env)
     validate(["report", *common], env)
-    return json.loads((out / "check" / "report.json").read_text())["conditions"]["B"]
+    return json.loads((out / "check" / "report.json").read_text(encoding="utf-8"))["conditions"]["B"]
 
 
 def main() -> None:
@@ -107,7 +107,7 @@ def main() -> None:
     settings = read_env()
     base = settings.get("LLM_BASE_URL") or die("no LLM_BASE_URL in .env: run `python llm/serve.py start` first")
     model = settings.get("LLM_MODEL", "local")
-    env = {**os.environ, **settings}
+    env = {**os.environ, "PYTHONUTF8": "1", **settings}
     STATE.mkdir(exist_ok=True)
 
     started = time.monotonic()

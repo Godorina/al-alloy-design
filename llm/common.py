@@ -41,10 +41,10 @@ def run_json(cmd: list[str]) -> dict:
 def read_env() -> dict[str, str]:
     if not ENV_FILE.exists():
         return {}
-    pairs = (line.split("=", 1) for line in ENV_FILE.read_text().splitlines() if "=" in line and not line.startswith("#"))
+    pairs = (line.split("=", 1) for line in ENV_FILE.read_text(encoding="utf-8").splitlines() if "=" in line and not line.startswith("#"))
     return {k.strip(): v.strip() for k, v in pairs}
 
 
 def write_env(updates: dict[str, str]) -> None:
     env = read_env() | updates
-    ENV_FILE.write_text("".join(f"{k}={v}\n" for k, v in env.items()))
+    ENV_FILE.write_text("".join(f"{k}={v}\n" for k, v in env.items()), encoding="utf-8")

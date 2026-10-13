@@ -38,7 +38,7 @@ def load_env() -> dict[str, str]:
     path = ROOT / ".env"
     if not path.exists():
         sys.exit("오류: .env 가 없습니다. 모델 서버를 먼저 켜세요: .venv/bin/python llm/serve.py start")
-    pairs = (line.split("=", 1) for line in path.read_text().splitlines() if "=" in line and not line.startswith("#"))
+    pairs = (line.split("=", 1) for line in path.read_text(encoding="utf-8").splitlines() if "=" in line and not line.startswith("#"))
     return {k.strip(): v.strip() for k, v in pairs}
 
 
@@ -50,7 +50,7 @@ def check_server(base: str) -> None:
 
 
 def read_request(args: argparse.Namespace) -> str:
-    text = Path(args.file).read_text() if args.file else (args.request or "")
+    text = Path(args.file).read_text(encoding="utf-8") if args.file else (args.request or "")
     if not text.strip():
         sys.exit("오류: 요구사항이 비어 있습니다. 문장으로 주거나 -f 파일을 쓰세요. 도움말: design.py -h")
     if len(text) > 12000:
@@ -63,7 +63,8 @@ def unfinished(answer: str) -> bool:
 
 
 def run_host(command: list[str], env: dict[str, str]) -> tuple[int, str]:
-    proc = subprocess.Popen(command, cwd=ROOT, env={**os.environ, **env}, stdout=subprocess.PIPE, text=True)
+    proc = subprocess.Popen(command, cwd=ROOT, env={**os.environ, "PYTHONUTF8": "1", **env}, stdout=subprocess.PIPE,
+                            text=True, encoding="utf-8", errors="replace")
     lines: list[str] = []
     assert proc.stdout is not None
     for line in proc.stdout:
@@ -87,7 +88,7 @@ def main() -> None:
     command = [sys.executable, str(HOST), "--server", "kg", "--max-steps", str(args.max_steps)]
 
     if args.chat:
-        raise SystemExit(subprocess.call(command, cwd=ROOT, env={**os.environ, **env}))
+        raise SystemExit(subprocess.call(command, cwd=ROOT, env={**os.environ, "PYTHONUTF8": "1", **env}))
 
     if not args.verbose:
         command.append("--quiet")
@@ -95,7 +96,7 @@ def main() -> None:
 
     RESULTS.mkdir(exist_ok=True)
     out = RESULTS / f"{datetime.now():%Y%m%d-%H%M%S}.md"
-    out.write_text(f"# 요청\n\n{request}\n\n# 결과\n\n{answer}")
+    out.write_text(f"# 요청\n\n{request}\n\n# 결과\n\n{answer}", encoding="utf-8")
     print(f"\n저장: {out.relative_to(ROOT)}", file=sys.stderr)
     if unfinished(answer):
         print("경고: 설계가 끝나지 않았습니다 (모델이 도구 호출 형식을 맞추지 못함). 같은 명령을 다시 실행하거나 "

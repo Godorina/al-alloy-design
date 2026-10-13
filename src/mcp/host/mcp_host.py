@@ -27,6 +27,7 @@ import asyncio
 import json
 import os
 import signal
+import subprocess
 import sys
 from contextlib import AsyncExitStack
 from datetime import date, datetime
@@ -141,17 +142,21 @@ async def run_skill_script(skill: str, script: str, args: list | None = None) ->
         proc = await asyncio.create_subprocess_exec(
             sys.executable, str(path), *map(str, args), cwd=str(ROOT),
             stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
-            start_new_session=True)
+            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == "win32" else 0,
+            start_new_session=sys.platform != "win32")
         try:
             out, err = await asyncio.wait_for(proc.communicate(), SCRIPT_TIMEOUT)
         except asyncio.TimeoutError:
             return {"error": f"timed out after {SCRIPT_TIMEOUT}s"}
         finally:
             if proc.returncode is None:
-                try:
-                    os.killpg(proc.pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
+                if sys.platform == "win32":
+                    subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"], capture_output=True)
+                else:
+                    try:
+                        os.killpg(proc.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
                 await proc.wait()
     out, err = out.decode(errors="replace"), err.decode(errors="replace")
     res = {"exit_code": proc.returncode, "stderr": err[-2000:]}
