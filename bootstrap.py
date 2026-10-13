@@ -27,7 +27,7 @@ ROOT = Path(__file__).resolve().parent
 HOME = Path.home()
 WIN = platform.system() == "Windows"
 PORT = 8080
-MODEL_REPO, MODEL_QUANT, MODEL_NEEDS_GB = "unsloth/Qwen3.8-27B-GGUF", "Q4_K_M", 20
+MODEL_REPO, MODEL_QUANT, MODEL_NEEDS_GB = "unsloth/Qwen3.8-27B-GGUF", "Q4_K_M", 24
 EXTRA_PATHS = [HOME / ".local" / "bin", HOME / ".cargo" / "bin", HOME / "llama.cpp" / "build" / "bin", Path("/usr/local/cuda/bin")]
 TOOLS = ["git", "curl", "cmake", "g++", "uv", "llmfit", "llama-server", "nvcc", "brew", "winget", "apt-get"]
 
@@ -191,8 +191,9 @@ def project_plan(env: dict[str, Any], pick_args: list[str], server_up: bool) -> 
             if budget_gb(env) >= MODEL_NEEDS_GB:
                 args = ["--repo", MODEL_REPO, "--quant", MODEL_QUANT]
             else:
-                notes.append(f"모델에 쓸 수 있는 메모리가 약 {budget_gb(env)}GB 라서 권장 27B(약 15GB + 컨텍스트)는 무겁습니다. "
-                             "llmfit 순위에서 직접 고르세요. 작은 모델은 설계 루프가 끝까지 안 돌 수 있습니다.")
+                args = ["--auto"]
+                notes.append(f"모델 예산이 약 {budget_gb(env)}GB 라서 권장 27B 대신 llmfit 이 이 PC 에 맞다고 고른 1순위 모델을 받습니다. "
+                             "작은 모델은 설계 루프가 끝까지 안 돌 수 있으니 selfcheck 결과를 확인하세요.")
         steps.append(("모델 선택·다운로드", [f"{py} llm/pick.py {' '.join(map(q, args))}".strip()]))
     if not server_up:
         steps.append(("모델 서버 켜기", [f"{py} llm/serve.py start"]))

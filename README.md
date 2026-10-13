@@ -77,7 +77,7 @@ python bootstrap.py --yes              # 묻지 않고 진행
 |---|---|
 | 환경 (Windows / WSL1·2 / Linux / macOS) | 환경에 맞는 설치 방법을 고름 (winget / apt + 소스 빌드 / brew). WSL1 이면 경고, `/mnt/` 아래이면 느리다고 경고 |
 | NVIDIA GPU, VRAM | 있으면 VRAM 을, 없으면 메모리의 60% 를 "모델 예산"으로 계산. WSL/Linux 에서 `nvcc` 가 있으면 CUDA 로 빌드, 없으면 CPU 로 빌드하고 안내 |
-| 메모리 | 예산이 20GB 이상이면 Qwen3.8-27B(약 15GB)를 자동 지정, 미만이면 llmfit 순위에서 직접 고르게 함 |
+| 메모리 | 예산이 24GB 이상이면 Qwen3.8-27B(약 15GB + 컨텍스트)를 지정, 미만이면 llmfit 이 이 PC 에 맞다고 고른 1순위 모델을 묻지 않고 받음 (직접 고르려면 `python llm/pick.py` 를 따로 실행) |
 | 설치된 도구 | git, uv, llama-server, llmfit 중 없는 것만 설치. Windows 는 설치 후 PATH 갱신을 위해 새 PowerShell 에서 같은 명령을 다시 실행해야 함 |
 
 모델을 직접 지정하려면 옵션을 그대로 붙입니다 (나머지 옵션은 `llm/pick.py` 로 전달됩니다).
