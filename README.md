@@ -39,7 +39,7 @@
 
 설치 확인:
 
-```bash
+```powershell
 git --version; uv --version; llama-server --version
 ```
 
@@ -52,7 +52,7 @@ git --version; uv --version; llama-server --version
 
 ### 2.1 저장소 내려받기
 
-```bash
+```powershell
 git clone -b windows-support https://github.com/Godorina/al-alloy-design.git
 cd al-alloy-design
 ```
@@ -62,7 +62,7 @@ cd al-alloy-design
 
 권장 모델 Qwen3.8-27B(약 15GB)로 설치:
 
-```bash
+```powershell
 .\setup.ps1 --repo unsloth/Qwen3.8-27B-GGUF --quant Q4_K_M
 ```
 
@@ -71,7 +71,7 @@ cd al-alloy-design
 
 가벼운 모델로 먼저 시험해 보려면 (설계 루프는 끝까지 돌지 않는 경우가 많습니다, 2.5 참고):
 
-```bash
+```powershell
 .\setup.ps1 --quant Q4_K_M       # llmfit 순위에서 번호 선택 (예: Qwen3-4B)
 ```
 
@@ -88,7 +88,7 @@ cd al-alloy-design
 
 ### 2.3 단계별로 직접 하기 (setup.ps1 를 쓰지 않을 때)
 
-```bash
+```powershell
 # (1) 파이썬 환경
 uv venv --python 3.12 .venv
 uv pip install --python .venv\Scripts\python.exe -r requirements.txt
@@ -130,7 +130,7 @@ uv pip install --python .venv\Scripts\python.exe -r requirements.txt
 
 ### 3.1 한 줄 실행
 
-```bash
+```powershell
 .venv\Scripts\python.exe design.py "6xxx T6 압출, UTS 330 MPa 이상, 연신율 10% 이상, 내식성 좋게"
 ```
 
@@ -153,7 +153,7 @@ uv pip install --python .venv\Scripts\python.exe -r requirements.txt
 넣을 수 있는 조건: 합금 계열(2xxx, 5xxx, 6xxx, 7xxx, Al-Li, 주조 Al-Si), 강도(UTS/YTS), 연신율 하한, 밀도 상한, 내식성, 템퍼(T6 등), 공정(압출 등).
 **숫자를 주지 않은 조건은 모델이 가정으로 채우고 "가정" 항목에 적습니다.** 지어낸 숫자를 요구로 넣지 마세요.
 
-```bash
+```powershell
 .venv\Scripts\python.exe design.py "7xxx T6 판재, UTS 550 MPa 이상, 밀도 2.85 이하"
 .venv\Scripts\python.exe design.py "경량 고강도 6xxx 압출재, 비강도 최대화, 연신율 8% 이상"
 ```
@@ -173,7 +173,7 @@ uv pip install --python .venv\Scripts\python.exe -r requirements.txt
 
 실측 합금 조회는 모델이 필요 없습니다.
 
-```bash
+```powershell
 .venv\Scripts\python.exe src/skills/alloy-properties/scripts/examples.py `
   --spec '{"series":"6xxx","temper":"T6","route":"extrusion","objectives":[{"property":"UTS","direction":"maximize","target":330}],"constraints":{"EL_min":10},"corrosion":true}' `
   --k 8
@@ -219,7 +219,7 @@ LLM_CTX_PER_SLOT=49152
 
 ## 6. 정리하기
 
-```bash
+```powershell
 .venv\Scripts\python.exe llm/serve.py stop      # 서버 끄기
 Remove-Item -Recurse -Force models      # 내려받은 모델 삭제 (수 GB ~ 수십 GB)
 Remove-Item -Recurse -Force .venv, .llm, runs, results, .env   # 환경·로그·결과 삭제 (모두 다시 만들 수 있음)
