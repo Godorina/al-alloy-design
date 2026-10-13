@@ -244,6 +244,7 @@ LLM_BASE_URL=http://127.0.0.1:11434   # Ollama 예시
 LLM_MODEL=모델이름
 LLM_SLOTS=2
 LLM_CTX_PER_SLOT=49152
+LLM_TIMEOUT=7200                      # 답 하나를 기다리는 최대 초 (0 = 무제한, GPU 없는 PC 는 0 권장)
 ```
 
 ## 5. 문제 해결
@@ -255,6 +256,7 @@ LLM_CTX_PER_SLOT=49152
 | 출력이 `<tool_call> {...}` 텍스트로 끝남 (`design.py` 는 경고를 내고 종료 코드 2) | 모델이 도구 호출 형식을 못 맞춤 (작은 모델) | 더 큰 모델로 교체 (2.5), 같은 명령을 다시 실행 |
 | `[stopped: same call repeated]` | 모델이 같은 잘못된 호출을 반복 | 위와 같음 |
 | `reply cut off at the context limit` | 모델의 한 답변이 끝없이 길어져 잘림 | 같은 명령을 다시 실행, 계속되면 더 큰 모델 |
+| `모델 서버 응답 시간 초과` (`httpx.ReadTimeout`) | GPU 없이 CPU 로만 돌면 대화가 길어질수록 답 하나에 30분 이상 걸림 (기본 제한 7200초) | `.env` 에 `LLM_TIMEOUT=0`(무제한)을 넣고 다시 실행. 노트북은 전원을 연결하고 Windows 전원 모드를 `최고 성능`으로. 근본 해결은 GPU |
 | `give 1-8 candidates per call` 등 인자 오류가 반복 | 모델이 `score.py` 입력 형식을 못 지킴 | 모델이 스스로 고치기도 합니다. 계속되면 더 큰 모델 |
 | 한 번 돌리는 데 너무 오래 걸림 | 모델이 크거나 PC 가 느림 | 더 작은 양자화(`--quant Q4_K_M`) 또는 작은 모델. 열이 많이 나면 중간에 `Ctrl+C` |
 | `llmfit` 이 없다고 나옴 | 미설치 | `pick.py` 가 설치 여부를 물어봅니다. 직접: `scoop install llmfit` 또는 `uv tool install llmfit` |

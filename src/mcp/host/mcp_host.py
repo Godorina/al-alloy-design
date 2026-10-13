@@ -43,6 +43,11 @@ SKILLS_DIR = ROOT / "src" / "skills"  # <name>/SKILL.md with name/description fr
 DEFAULT_SERVERS = ["kg"]
 LLM = os.environ.get("LLM_BASE_URL", "http://127.0.0.1:8080") + "/v1/chat/completions"  # any OpenAI-compatible server
 LLM_MODEL = os.environ.get("LLM_MODEL", "local")
+# seconds to wait for one model reply (0 = no limit). CPU-only machines slow down as the conversation grows:
+# a 14B model on an 8-thread laptop read a 10k-token prompt at ~4 tok/s, i.e. well over 30 minutes for one reply.
+LLM_TIMEOUT = float(os.environ.get("LLM_TIMEOUT", "7200")) or None
+TIMEOUT_ANSWER = ("[LLM error timeout] 모델 서버가 {:.0f}초 안에 답하지 않았습니다. CPU 만 쓰는 PC 에서 대화가 길어지면 생깁니다. "
+                  ".env 에 LLM_TIMEOUT=0 (무제한) 을 넣고 다시 실행하거나, GPU 를 쓰세요 (README 5장).")
 MAX_STEPS = 12
 MAX_TOKENS = 8192  # per reply; a 5-sample extraction record plus thinking overran 4096 (slot ctx 49152)
 SCRIPT_TIMEOUT = 300       # seconds per skill script run
@@ -371,13 +376,16 @@ async def main(task: str | None, servers: list[str], verbose: bool = True):
             system=system["content"])
         # one reply may be MAX_TOKENS long; with both llama-server slots busy Qwen decodes ~8 tok/s, so 8192 tokens
         # take ~1000 s (a 5-sample corrosion record timed out at 600 s). Callers bound the whole run themselves.
-        async with httpx.AsyncClient(timeout=1800.0) as http:
+        async with httpx.AsyncClient(timeout=LLM_TIMEOUT) as http:
             if task is not None:
                 if verbose:
                     print(f"tools: {names}", file=sys.stderr)
                 messages.append({"role": "user", "content": task})
                 log("user", content=task)
-                answer = await _step_until_answer(http, route, messages, oai_tools, verbose)
+                try:
+                    answer = await _step_until_answer(http, route, messages, oai_tools, verbose)
+                except httpx.TimeoutException:
+                    answer = TIMEOUT_ANSWER.format(LLM_TIMEOUT or 0)
                 log("answer", content=answer)
                 print(answer)
                 return answer
@@ -400,8 +408,11 @@ async def main(task: str | None, servers: list[str], verbose: bool = True):
                     continue
                 messages.append({"role": "user", "content": user})
                 log("user", content=user)
-                answer = await _step_until_answer(
-                    http, route, messages, oai_tools, verbose)
+                try:
+                    answer = await _step_until_answer(
+                        http, route, messages, oai_tools, verbose)
+                except httpx.TimeoutException:
+                    answer = TIMEOUT_ANSWER.format(LLM_TIMEOUT or 0)
                 log("answer", content=answer)
                 messages.append({"role": "assistant", "content": answer})
                 print(f"\n{answer}")

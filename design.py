@@ -98,7 +98,11 @@ def main() -> None:
     out = RESULTS / f"{datetime.now():%Y%m%d-%H%M%S}.md"
     out.write_text(f"# 요청\n\n{request}\n\n# 결과\n\n{answer}", encoding="utf-8")
     print(f"\n저장: {out.relative_to(ROOT)}", file=sys.stderr)
-    if unfinished(answer):
+    if answer.lstrip().startswith("[LLM error timeout]"):
+        print("경고: 설계가 끝나지 않았습니다 (모델 서버 응답 시간 초과). .env 의 LLM_TIMEOUT 을 늘리거나(0 = 무제한) "
+              "GPU 를 쓰세요. README 5장 참고.", file=sys.stderr)
+        code = code or 2
+    elif unfinished(answer):
         print("경고: 설계가 끝나지 않았습니다 (모델이 도구 호출 형식을 맞추지 못함). 같은 명령을 다시 실행하거나 "
               "더 큰 모델을 쓰세요. README 5장 참고.", file=sys.stderr)
         code = code or 2
