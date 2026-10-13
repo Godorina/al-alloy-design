@@ -214,7 +214,8 @@ def project_plan(env: dict[str, Any], pick_args: list[str], server_up: bool, slo
         steps.append(("모델 선택·다운로드", [f"{py} llm/pick.py {' '.join(map(q, args))}".strip()]))
     if not server_up:
         steps.append((f"모델 서버 켜기 (동시 요청 {slots})", [f"{py} llm/serve.py start --slots {slots}"]))
-    steps.append(("품질 점검 (selfcheck)", [f"{py} llm/selfcheck.py"]))
+    # 점검 결과(FAIL/WARN)는 모델 품질 문제라 설치 실패로 치지 않습니다. 결과는 화면에 그대로 나옵니다
+    steps.append(("품질 점검 (selfcheck)", [f"{py} llm/selfcheck.py || echo \"품질 점검이 통과하지 못했습니다. README 2.4, 2.5 를 보고 더 큰 모델을 고르세요.\""]))
     return steps, notes
 
 

@@ -13,6 +13,8 @@
   이미 끝난 단계는 건너뛰므로 몇 번을 다시 실행해도 됩니다.
   로그: %LOCALAPPDATA%\al-alloy-design\install-wsl.log
 
+  저장소를 받은 뒤 install.cmd 를 더블클릭하면 이 스크립트가 실행됩니다.
+
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File .\install-wsl.ps1
 .EXAMPLE

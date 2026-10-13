@@ -31,12 +31,13 @@
 
 ### 1.0 Windows 에서 WSL 부터 한 번에 (권장)
 
-WSL 이 없는 Windows PC 라면 PowerShell 에서 아래 두 줄이면 됩니다. git 도 파이썬도 필요 없습니다.
+Windows PC 라면 **저장소를 받고 `install.cmd` 하나만 더블클릭**하면 됩니다. git 도 파이썬도 WSL 도 미리 없어도 됩니다. WSL 이 이미 있으면 끝난 단계는 건너뜁니다.
 
-```powershell
-irm https://raw.githubusercontent.com/Godorina/al-alloy-design/windows-support/install-wsl.ps1 -OutFile install-wsl.ps1
-powershell -ExecutionPolicy Bypass -File .\install-wsl.ps1
-```
+1. 이 페이지의 `Code` → `Download ZIP` 으로 받아 압축을 풉니다 (git 이 있으면 `git clone -b windows-support https://github.com/Godorina/al-alloy-design.git`)
+2. 압축을 푼 폴더의 **`install.cmd` 를 더블클릭**합니다 ("Windows의 PC 보호" 창이 뜨면 `추가 정보` → `실행`)
+3. 묻는 것은 이것뿐입니다: 관리자 권한 창(`예`), 재부팅(필요할 때만), 리눅스 사용자 이름과 비밀번호. 나머지(빌드, 모델 다운로드, 점검)는 자동으로 끝까지 진행됩니다 (보통 30분~1시간)
+
+PowerShell 에서 직접 실행하려면: `powershell -ExecutionPolicy Bypass -File .\install-wsl.ps1`
 
 | 단계 | 하는 일 |
 |---|---|
@@ -47,7 +48,8 @@ powershell -ExecutionPolicy Bypass -File .\install-wsl.ps1
 | 5. 메모리 | `%UserProfile%\.wslconfig` 의 `memory` 를 RAM 의 약 65% 로 맞춥니다 (WSL 기본값은 50%) |
 | 6. 프로젝트 | WSL 안에서 apt 패키지 → `git clone` (`~/al-alloy-design`) → `python3 bootstrap.py --yes` |
 
-- 이미 끝난 단계는 건너뛰므로 중간에 멈춰도 같은 명령을 다시 실행하면 됩니다. 로그: `%LOCALAPPDATA%\al-alloy-design\install-wsl.log`
+- 이미 끝난 단계는 건너뛰므로 중간에 멈춰도 `install.cmd` 를 다시 실행하면 됩니다.
+- 실제 설치 위치는 WSL 안의 `~/al-alloy-design` 입니다 (Windows 폴더보다 훨씬 빠름). 받은 ZIP 폴더는 설치 뒤 지워도 됩니다. 로그: `%LOCALAPPDATA%\al-alloy-design\install-wsl.log`
 - 옵션: `-User 이름`, `-MemoryGB 20`, `-ModelRepo unsloth/Qwen3-14B-GGUF`, `-Quant Q4_K_M`, `-SkipBootstrap`(WSL 준비와 clone 까지만), `-Yes`(묻지 않음, 재부팅 포함)
 - 끝나면 시작 메뉴의 **Ubuntu** 를 열고 `cd ~/al-alloy-design` 후 3장으로 가세요. WSL 안에서는 `.venv\Scripts\python.exe` 대신 `.venv/bin/python`, `python` 대신 `python3` 입니다.
 
@@ -276,6 +278,7 @@ uv cache prune                          # 쓰지 않는 uv 캐시 정리 (선택
 ## 7. 구조, 데이터, 라이선스
 
 ```
+install.cmd                Windows: 더블클릭하면 install-wsl.ps1 실행
 install-wsl.ps1            Windows: WSL2 + Ubuntu 를 만들고 그 안에서 bootstrap.py 까지 실행
 bootstrap.py               환경 감지 + 한 번에 설치 (setup.sh 는 macOS/Linux 용 간단판)
 design.py                  설계 실행 (CLI)
