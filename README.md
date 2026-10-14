@@ -3,6 +3,8 @@
 로컬 LLM과 실측 데이터로 "원하는 물성의 알루미늄 합금 조성"을 찾아 주는 도구입니다.
 이 브랜치(`windows-support`)의 `bootstrap.py` 는 **Windows / WSL / Linux / macOS 를 스스로 감지**해서 그 환경에 맞게 설치합니다. 터미널 명령 하나로 실행합니다. (웹 화면이 필요하면 [docs/webui.md](docs/webui.md) — 선택 사항)
 
+> **Windows 에서 처음 설치한다면 → [docs/install-windows.md](docs/install-windows.md)** (ZIP 받고 `install.cmd` 더블클릭, 화면별 할 일, GPU/CPU, 문제 해결까지 단계별 안내)
+
 ```
 요구사항(문장)
    │  design.py
