@@ -160,6 +160,25 @@ function Get-WslOutput([string[]]$Cmd, [switch]$AsRoot, [string]$Cd = "~", [swit
     return ($out | Out-String).Trim()
 }
 
+# scripts/install-cuda-wsl.sh 와 같은 기준: 최신 Ubuntu(glibc 2.42+)에서는 CUDA 13.2 이상만 컴파일됩니다
+$MinCuda = [version]"13.2"
+
+function Get-NvidiaSmiText {
+    if (-not (Get-Command nvidia-smi.exe -ErrorAction SilentlyContinue)) { return $null }
+    $ErrorActionPreference = "Continue"
+    return (& nvidia-smi.exe 2>$null | Out-String)
+}
+
+function Get-GpuPlan([string[]]$names, [string]$smiText) {
+    # Mode: cuda (GPU 로 설치) | cpu (NVIDIA 아님) | no-driver | old-driver
+    $nvidia = @($names | Where-Object { $_ -match "NVIDIA" }) | Select-Object -First 1
+    if (-not $nvidia) { return [pscustomobject]@{ Mode = "cpu"; Name = ($names -join ", "); Cuda = $null } }
+    if (-not $smiText) { return [pscustomobject]@{ Mode = "no-driver"; Name = $nvidia; Cuda = $null } }
+    $cuda = if ($smiText -match 'CUDA Version:\s*([0-9]+\.[0-9]+)') { $Matches[1] } else { $null }
+    $mode = if ($cuda -and [version]$cuda -ge $MinCuda) { "cuda" } else { "old-driver" }
+    return [pscustomobject]@{ Mode = $mode; Name = $nvidia; Cuda = $cuda }
+}
+
 function ConvertTo-GB([string]$value) {
     if ($value -match '^\s*(\d+(?:\.\d+)?)\s*([KMGT]?)B?\s*$') {
         $n = [double]$Matches[1]
@@ -227,17 +246,23 @@ if (-not (Get-CimInstance Win32_ComputerSystem).HypervisorPresent -and -not $cpu
     Write-Warn "CPU 가상화가 꺼져 있는 것 같습니다. WSL2 가 안 켜지면 BIOS/UEFI 에서 Intel VT-x / AMD SVM 을 켜세요."
 } else { Write-Ok "가상화 사용 가능" }
 
-# GPU: NVIDIA 이고 Windows 드라이버(nvidia-smi)가 있으면 WSL 에서 CUDA 로, 아니면 CPU 로 설치합니다
-$gpuNames = @(Get-CimInstance Win32_VideoController | ForEach-Object { $_.Name })
-$hasNvidia = [bool]($gpuNames -match "NVIDIA")
-if ($hasNvidia -and (Get-Command nvidia-smi.exe -ErrorAction SilentlyContinue)) {
-    $winSmi = (& nvidia-smi.exe 2>$null | Out-String)
-    $winCuda = if ($winSmi -match 'CUDA Version:\s*([0-9]+\.[0-9]+)') { $Matches[1] } else { "?" }
-    Write-Ok "GPU: $($gpuNames -match 'NVIDIA' | Select-Object -First 1) (드라이버 CUDA $winCuda) -> GPU 로 설치"
-} elseif ($hasNvidia) {
-    Write-Warn "NVIDIA GPU 가 있지만 드라이버(nvidia-smi)가 없습니다. https://www.nvidia.com/drivers 에서 설치하면 GPU 를 씁니다. 지금은 CPU 로 진행합니다."
-} else {
-    Write-Ok "GPU: $($gpuNames -join ', ') -> NVIDIA 가 아니라 CPU 로 설치 (느립니다)"
+# GPU: NVIDIA + 드라이버가 CUDA 13.2 이상이면 GPU 로, 아니면 CPU 로. 드라이버만 문제면 여기서 미리 물어봅니다
+$Gpu = Get-GpuPlan @(Get-CimInstance Win32_VideoController | ForEach-Object { $_.Name }) (Get-NvidiaSmiText)
+switch ($Gpu.Mode) {
+    "cuda" { Write-Ok "GPU: $($Gpu.Name) (드라이버 CUDA $($Gpu.Cuda)) -> GPU 로 설치" }
+    "cpu" { Write-Ok "GPU: $($Gpu.Name) -> NVIDIA 가 아니라 CPU 로 설치 (느립니다)" }
+    default {
+        $why = if ($Gpu.Mode -eq "no-driver") { "드라이버(nvidia-smi)가 없습니다" } else { "드라이버가 CUDA $($Gpu.Cuda) 까지만 지원합니다 ($MinCuda 이상 필요)" }
+        Write-Warn "GPU: $($Gpu.Name) 가 있지만 $why."
+        Write-Info "NVIDIA 드라이버를 설치/업데이트하면 GPU 로 훨씬 빠르게 돌릴 수 있습니다: https://www.nvidia.com/Download/index.aspx"
+        if (Confirm-Step "지금은 CPU 로 계속할까요? (n: 드라이버 페이지를 열고 멈춥니다. 업데이트 후 install.cmd 를 다시 실행하세요)") {
+            $Gpu.Mode = "cpu-forced"
+        } else {
+            Start-Process "https://www.nvidia.com/Download/index.aspx"
+            try { Stop-Transcript | Out-Null } catch {}
+            exit 0
+        }
+    }
 }
 
 $existing = Get-DistroInfo $Distro
@@ -254,8 +279,10 @@ if ($User -and $User -notmatch '^[a-z_][a-z0-9_-]{0,31}$') { Stop-Install "리�
 
 # 2. Windows 기능 ------------------------------------------------------------
 Write-Step 2 "Windows 기능 (WSL, 가상 머신 플랫폼)"
+$changed = $false   # 이번 실행에서 WSL 쪽을 실제로 바꿨을 때만 재부팅합니다 (Windows 업데이트의 재부팅 대기와 구분)
 if (Test-WslInstalled) { Write-Ok "WSL 설치됨" }
 else {
+    $changed = $true
     Write-Info "WSL 을 설치합니다 (관리자 권한 창이 뜨면 '예')"
     $null = Invoke-Elevated "wsl.exe" @("--install", "--no-distribution")
     if (-not (Test-WslInstalled)) {
@@ -275,8 +302,10 @@ if ($missing.Count) {
     $code = Invoke-Elevated "dism.exe" $dismArgs
     if ($code -notin @(0, 3010)) { Stop-Install "DISM 이 실패했습니다 (종료 코드 $code)" }
     Write-Ok "기능을 켰습니다 (종료 코드 $code)"
+    $changed = $true
 }
-if (Test-RebootPending) { Request-Reboot "켠 기능을 적용하려면 재부팅이 필요합니다." }
+if ($changed -and (Test-RebootPending)) { Request-Reboot "켠 기능을 적용하려면 재부팅이 필요합니다." }
+elseif (Test-RebootPending) { Write-Info "Windows 에 다른 재부팅 대기(예: Windows 업데이트)가 있지만 WSL 과는 무관해 계속합니다." }
 if (-not (Test-WslInstalled)) { Stop-Install "WSL 이 설치되지 않았습니다. 'wsl --install' 을 직접 실행한 뒤 이 스크립트를 다시 실행하세요." }
 
 # 3. 배포판 ------------------------------------------------------------------
@@ -354,29 +383,43 @@ if ((Invoke-Wsl -AllowFail -Cmd @("test", "-d", "$project/.git")) -eq 0) {
 }
 Write-Ok "저장소: $project ($Branch)"
 
-# WSL 안에서 NVIDIA GPU 가 보이면 CUDA 빌드 도구를 root 로 미리 설치합니다 (bootstrap.py 의 sudo 비밀번호 질문을 피함)
-$wslSmi = Get-WslOutput -AllowFail -Cmd @("nvidia-smi")
-if ($wslSmi -match 'CUDA Version:\s*([0-9]+\.[0-9]+)') {
-    $driverCuda = $Matches[1]
-    if ((Invoke-Wsl -AllowFail -Cmd @("test", "-x", "/usr/local/cuda/bin/nvcc")) -eq 0) {
-        Write-Ok "NVIDIA GPU (드라이버 CUDA $driverCuda), CUDA 빌드 도구 있음"
+# GPU 로 갈 때만: WSL 안에서도 GPU 가 보이는지 확인하고 CUDA 빌드 도구를 root 로 미리 설치합니다 (bootstrap.py 의 sudo 질문을 피함)
+if ($Gpu.Mode -eq "cuda") {
+    $wslSmi = Get-WslOutput -AllowFail -Cmd @("nvidia-smi")
+    if ($wslSmi -notmatch 'CUDA Version:\s*([0-9]+\.[0-9]+)') {
+        Write-Warn "Windows 에는 NVIDIA GPU 가 있지만 WSL 안에서 보이지 않습니다 (wsl --update 후 재부팅하면 대개 해결). 이번에는 CPU 로 진행합니다."
+        $Gpu.Mode = "cpu-forced"
+    } elseif ((Invoke-Wsl -AllowFail -Cmd @("test", "-x", "/usr/local/cuda/bin/nvcc")) -eq 0) {
+        Write-Ok "CUDA 빌드 도구 있음"
     } else {
-        Write-Info "NVIDIA GPU (드라이버 CUDA $driverCuda): CUDA 빌드 도구 설치 (약 1GB, 드라이버는 설치하지 않음)"
-        if ((Invoke-Wsl -AsRoot -Cd $project -AllowFail -Cmd @("bash", "scripts/install-cuda-wsl.sh", $driverCuda)) -eq 0) {
+        Write-Info "CUDA 빌드 도구 설치 (약 1GB, 드라이버는 설치하지 않음)"
+        if ((Invoke-Wsl -AsRoot -Cd $project -AllowFail -Cmd @("bash", "scripts/install-cuda-wsl.sh", $Gpu.Cuda)) -eq 0) {
             Write-Ok "CUDA 빌드 도구"
         } else {
-            Write-Warn "CUDA 빌드 도구를 설치하지 못해 CPU 로 진행합니다 (위 안내대로 드라이버를 업데이트한 뒤 install.cmd 를 다시 실행하면 GPU 로 다시 빌드합니다)."
+            Write-Warn "CUDA 빌드 도구를 설치하지 못해 CPU 로 진행합니다 (위 메시지를 확인하고 install.cmd 를 다시 실행하면 GPU 로 다시 빌드합니다)."
+            $Gpu.Mode = "cpu-forced"
         }
     }
-} else {
-    Write-Ok "WSL 에서 NVIDIA GPU 가 보이지 않아 CPU 로 설치합니다"
 }
 
 $bootArgs = @("--yes")
 if ($ModelRepo) { $bootArgs += @("--repo", $ModelRepo, "--quant", $Quant) }
 if ($SkipBootstrap) { $bootArgs = @("--detect-only") }
+if ($Gpu.Mode -eq "cpu-forced") { $bootArgs += "--cpu" }   # NVIDIA 가 있어도 CPU 로: 중간에 CUDA 설치·sudo 를 다시 시도하지 않게
 Write-Info "python3 bootstrap.py $($bootArgs -join ' ')"
 $null = Invoke-Wsl -Cd $project -Cmd (@("python3", "bootstrap.py") + $bootArgs)
+
+# 요약: 실제로 GPU 를 쓰는지는 빌드된 llama-server 가 보는 장치로 확인합니다
+Write-Step "요약" "설치 결과"
+$devices = Get-WslOutput -AllowFail -Cmd @("$linuxHome/.local/bin/llama-server", "--list-devices")
+$cudaDevice = if ($devices -match '(CUDA\d+:[^\r\n]+)') { $Matches[1].Trim() } else { $null }
+if ($cudaDevice) { Write-Ok "계산 장치: GPU ($cudaDevice)" }
+elseif ($Gpu.Mode -eq "cuda") { Write-Warn "계산 장치: CPU (GPU 로 빌드되지 않았습니다. 위 llama.cpp 빌드 메시지를 확인하세요)" }
+else { Write-Ok "계산 장치: CPU" }
+$selection = Get-WslOutput -AllowFail -Cd $project -Cmd @("cat", ".llm/selection.json")
+try { $sel = $selection | ConvertFrom-Json; Write-Ok "모델: $($sel.repo) ($($sel.quant))" } catch { Write-Info "모델: (아직 선택 안 됨)" }
+$status = Get-WslOutput -AllowFail -Cd $project -Cmd @(".venv/bin/python", "llm/serve.py", "status")
+if ($status -match 'healthy: True') { Write-Ok "모델 서버: 켜져 있음 (http://127.0.0.1:8080)" } else { Write-Info "모델 서버: 꺼져 있음 (켜기: cd ~/$Dir && .venv/bin/python llm/serve.py start)" }
 
 Remove-Item $StateFile -ErrorAction SilentlyContinue
 Write-Host "`n끝났습니다." -ForegroundColor Green

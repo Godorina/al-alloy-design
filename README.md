@@ -41,13 +41,15 @@ PowerShell 에서 직접 실행하려면: `powershell -ExecutionPolicy Bypass -F
 
 | 단계 | 하는 일 |
 |---|---|
-| 1. 사전 점검 | Windows 빌드(19041 이상), 가상화, 디스크, 메모리, **GPU** (NVIDIA + 드라이버면 GPU 로, 아니면 CPU 로 설치) |
+| 1. 사전 점검 | Windows 빌드(19041 이상), 가상화, 디스크, 메모리, **GPU**: NVIDIA + 드라이버가 CUDA 13.2 이상이면 GPU 로, NVIDIA 가 아니면 CPU 로. NVIDIA 인데 드라이버가 없거나 오래됐으면 "CPU 로 계속 / 드라이버 페이지 열고 멈춤" 을 물어봅니다 |
 | 2. Windows 기능 | WSL, 가상 머신 플랫폼을 켭니다 (관리자 권한 창에서 `예`). 재부팅이 필요하면 `shutdown /r` 로 재부팅하고, 로그인하면 **자동으로 이어서** 실행됩니다 |
 | 3. 배포판 | Ubuntu 를 설치합니다 |
 | 4. 사용자 | 리눅스 계정을 만들고 기본 사용자로 지정합니다. **비밀번호만 직접 입력**합니다 |
 | 5. 메모리 | `%UserProfile%\.wslconfig` 의 `memory` 를 RAM 의 약 65% 로 맞춥니다 (WSL 기본값은 50%) |
 | 6. 프로젝트 | WSL 안에서 apt 패키지 → `git clone` (`~/al-alloy-design`) → (NVIDIA 면) CUDA 빌드 도구 → `python3 bootstrap.py --yes` |
 
+- 끝나면 **요약**이 나옵니다: 계산 장치(실제로 GPU 를 잡았는지 `llama-server --list-devices` 로 확인), 모델, 모델 서버 상태.
+- 재부팅은 이번 실행에서 WSL 기능을 켰을 때만 합니다. Windows 업데이트 때문에 생긴 재부팅 대기는 건드리지 않습니다.
 - 이미 끝난 단계는 건너뛰므로 중간에 멈춰도 `install.cmd` 를 다시 실행하면 됩니다.
 - 실제 설치 위치는 WSL 안의 `~/al-alloy-design` 입니다 (Windows 폴더보다 훨씬 빠름). 받은 ZIP 폴더는 설치 뒤 지워도 됩니다. 로그: `%LOCALAPPDATA%\al-alloy-design\install-wsl.log`
 - 옵션: `-User 이름`, `-MemoryGB 20`, `-ModelRepo unsloth/Qwen3-14B-GGUF`, `-Quant Q4_K_M`, `-SkipBootstrap`(WSL 준비와 clone 까지만), `-Yes`(묻지 않음, 재부팅 포함)

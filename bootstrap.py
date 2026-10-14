@@ -6,6 +6,7 @@
   python3 bootstrap.py --yes           묻지 않고 진행
   python3 bootstrap.py --rebuild-llama llama.cpp 를 다시 빌드 (Linux/WSL, CUDA toolkit 을 나중에 설치했을 때)
   python3 bootstrap.py --slots 1       모델 서버의 동시 요청 수 (기본: 메모리가 작으면 1, 아니면 2)
+  python3 bootstrap.py --cpu           NVIDIA GPU 가 있어도 CPU 로 (Windows 드라이버가 오래됐을 때)
 
 그 밖의 옵션은 llm/pick.py 로 넘어갑니다 (예: --repo unsloth/Qwen3.8-27B-GGUF --quant Q4_K_M, --auto).
 표준 라이브러리만 씁니다. Windows 에 파이썬이 없으면: winget install astral-sh.uv 후 `uv run bootstrap.py`.
@@ -287,11 +288,14 @@ def main() -> None:
     ap.add_argument("-y", "--yes", action="store_true")
     ap.add_argument("--rebuild-llama", action="store_true")
     ap.add_argument("--slots", type=int, help="모델 서버 동시 요청 수 (기본: 메모리가 작으면 1, 아니면 2)")
+    ap.add_argument("--cpu", action="store_true", help="NVIDIA GPU 가 있어도 CPU 로 빌드·설정 (드라이버가 오래됐을 때)")
     args, pick_args = ap.parse_known_args()
 
     os.environ["PYTHONUTF8"] = "1"
     path_before = os.environ.get("PATH", "")
     env = detect()
+    if args.cpu and env["gpu"]["kind"] == "nvidia":  # 모델 예산도 VRAM 대신 메모리로 계산합니다
+        env["gpu"] = {"kind": "none", "name": f"{env['gpu']['name']} (쓰지 않음: --cpu)", "vram_gb": None}
     show_detection(env)
     if args.detect_only:
         return
