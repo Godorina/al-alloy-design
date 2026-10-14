@@ -3,7 +3,6 @@ __pycache__/
 *.pyc
 .env
 .llm/
-.webui/
 models/
 runs/
 results/

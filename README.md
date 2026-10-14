@@ -1,7 +1,7 @@
 # Al Alloy Design — 알루미늄 합금 역설계 (CLI)
 
 로컬 LLM과 실측 데이터로 "원하는 물성의 알루미늄 합금 조성"을 찾아 주는 도구입니다.
-이 브랜치(`windows-support`)의 `bootstrap.py` 는 **Windows / WSL / Linux / macOS 를 스스로 감지**해서 그 환경에 맞게 설치합니다. 터미널 명령 하나로 실행합니다. (웹 화면이 필요하면 [docs/webui.md](docs/webui.md) — 선택 사항)
+이 브랜치(`windows-support`)의 `bootstrap.py` 는 **Windows / WSL / Linux / macOS 를 스스로 감지**해서 그 환경에 맞게 설치합니다. 터미널 명령(CLI)으로 실행합니다.
 
 > **Windows 에서 처음 설치한다면 → [docs/install-windows.md](docs/install-windows.md)** (ZIP 받고 `install.cmd` 더블클릭, 화면별 할 일, GPU/CPU, 문제 해결까지 단계별 안내)
 
@@ -295,7 +295,6 @@ src/mcp/servers/kg/        지식그래프 MCP 서버
 src/skills/                alloy-properties(다물성 설계), alloy-strength(ICL 강도 엔진, ML 모델)
 data/alloy-properties/     강도 표(v1, v2, 논문 행), JSM·Tamura 2020 데이터
 ontology/al_alloy/         al6xxx, alml 지식그래프(스키마, 규칙, 질의, build/kg.ttl)
-openwebui/, webui.sh       Open WebUI 연동 (선택, docs/webui.md)
 scripts/strip_quotes.py    KG 에서 논문 원문 인용을 제거하는 도구
 scripts/install-cuda-wsl.sh  WSL 에 CUDA 빌드 도구만 설치 (드라이버 없음, bootstrap.py / install-wsl.ps1 이 자동으로 씀)
 ```

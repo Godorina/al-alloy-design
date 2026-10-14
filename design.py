@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""요구사항 하나로 알루미늄 합금 설계를 실행하고 결과를 results/ 에 저장합니다 (Open WebUI 불필요).
+"""요구사항 하나로 알루미늄 합금 설계를 실행하고 결과를 results/ 에 저장합니다.
 
   .venv/bin/python design.py "6xxx T6 압출, UTS 330 MPa 이상, 연신율 10% 이상, 내식성 좋게"
   .venv/bin/python design.py -f 요구사항.txt        파일에서 요구사항 읽기

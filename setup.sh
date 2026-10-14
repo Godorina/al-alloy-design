@@ -16,5 +16,5 @@ cat <<'EOF'
 
 설치가 끝났습니다. 다음으로 설계를 실행하세요:
   .venv/bin/python design.py "6xxx T6 압출, UTS 330 MPa 이상, 연신율 10% 이상, 내식성 좋게"
-자세한 사용법은 README.md 를 보세요. (Open WebUI를 쓰려면 docs/webui.md)
+자세한 사용법은 README.md 를 보세요.
 EOF
