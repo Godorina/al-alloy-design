@@ -3,7 +3,27 @@
 로컬 LLM과 실측 데이터로 "원하는 물성의 알루미늄 합금 조성"을 찾아 주는 도구입니다.
 이 브랜치(`windows-support`)의 `bootstrap.py` 는 **Windows / WSL / Linux / macOS 를 스스로 감지**해서 그 환경에 맞게 설치합니다. 터미널 명령(CLI)으로 실행합니다.
 
-> **Windows 에서 처음 설치한다면 → [docs/install-windows.md](docs/install-windows.md)** (ZIP 받고 `install.cmd` 더블클릭, 화면별 할 일, GPU/CPU, 문제 해결까지 단계별 안내)
+## 빠른 설치 (명령어)
+
+**WSL(Ubuntu) / Linux 안에서** — 터미널에 차례로 입력합니다. GPU(NVIDIA)·CPU 를 감지해서 맞게 빌드하고, 메모리/VRAM 에 맞는 모델을 받습니다.
+
+```bash
+git clone -b windows-support https://github.com/Godorina/al-alloy-design.git ~/al-alloy-design
+cd ~/al-alloy-design
+python3 bootstrap.py --yes
+```
+
+**WSL 이 아직 없는 Windows** — PowerShell 에서. WSL·Ubuntu 설치부터 위 단계까지 한 번에 합니다.
+
+```powershell
+cd $HOME\Downloads
+irm https://raw.githubusercontent.com/Godorina/al-alloy-design/windows-support/install-wsl.ps1 -OutFile install-wsl.ps1
+powershell -ExecutionPolicy Bypass -File .\install-wsl.ps1
+```
+
+- `-b windows-support` 를 꼭 붙이세요. 기본 브랜치(`main`)에는 이 설치 기능이 없습니다.
+- 설치가 끝나면 터미널을 새로 열고: `cd ~/al-alloy-design && .venv/bin/python design.py -v "6xxx T6 압출, UTS 330 MPa 이상, 연신율 10% 이상"`
+- 단계별 화면, GPU/CPU 차이, 문제 해결: **[docs/install-windows.md](docs/install-windows.md)**
 
 ```
 요구사항(문장)
@@ -23,7 +43,7 @@
 
 | 항목 | 내용 |
 |---|---|
-| 지원 환경 | Windows 10/11(PowerShell 7 권장: `winget install Microsoft.PowerShell`), WSL2 의 Linux, Linux, macOS. `bootstrap.py` 가 감지합니다. WSL 이 없는 Windows 는 `install-wsl.ps1` 이 WSL 부터 만들어 줍니다 (1.0). **WSL 설치 과정은 Windows 11 Home 에서 확인했고, 네이티브 Windows 와 WSL 위의 설계 루프는 아직 시험하지 못했습니다.** 막히면 오류 메시지를 알려 주세요 |
+| 지원 환경 | Windows 10/11(PowerShell 7 권장: `winget install Microsoft.PowerShell`), WSL2 의 Linux, Linux, macOS. `bootstrap.py` 가 감지합니다. WSL 이 없는 Windows 는 `install-wsl.ps1` 이 WSL 부터 만들어 줍니다 (1.0). **Windows 11 Home + WSL2(Ubuntu 26.04), CPU 로 설치·설계 루프까지 확인했습니다. NVIDIA GPU(CUDA) 경로와 네이티브 Windows 는 아직 실제로 시험하지 못했습니다.** 막히면 오류 메시지를 알려 주세요 |
 | 한글 깨짐 방지 | 새 PowerShell 마다 `$env:PYTHONUTF8 = "1"` (영구 적용: `setx PYTHONUTF8 1` 후 새 창). `bootstrap.py` 는 자동으로 설정합니다 |
 | 명령 표기 | 이 README 의 `.venv\Scripts\python.exe` 는 WSL/Linux/macOS 에서는 `.venv/bin/python` 으로 읽으세요 |
 | 결과의 성격 | 강도(UTS/YTS)·연신율은 **예측값**입니다. 부식은 예측하지 않고 **가장 가까운 합금의 실측·공칭 값**을 보여 줍니다 |
@@ -31,15 +51,18 @@
 
 ## 1. 준비물
 
-### 1.0 Windows 에서 WSL 부터 한 번에 (권장)
+### 1.0 Windows 에서 WSL 부터 한 번에 (install-wsl.ps1)
 
-Windows PC 라면 **저장소를 받고 `install.cmd` 하나만 더블클릭**하면 됩니다. git 도 파이썬도 WSL 도 미리 없어도 됩니다. WSL 이 이미 있으면 끝난 단계는 건너뜁니다.
+WSL 이 없는 Windows PC 는 PowerShell 명령 세 줄이면 됩니다 (맨 위 "빠른 설치"와 같음). git 도 파이썬도 WSL 도 미리 없어도 되고, WSL 이 이미 있으면 끝난 단계는 건너뜁니다.
 
-1. 이 페이지의 `Code` → `Download ZIP` 으로 받아 압축을 풉니다 (git 이 있으면 `git clone -b windows-support https://github.com/Godorina/al-alloy-design.git`)
-2. 압축을 푼 폴더의 **`install.cmd` 를 더블클릭**합니다 ("Windows의 PC 보호" 창이 뜨면 `추가 정보` → `실행`)
-3. 묻는 것은 이것뿐입니다: 관리자 권한 창(`예`), 재부팅(필요할 때만), 리눅스 사용자 이름과 비밀번호. 나머지(빌드, 모델 다운로드, 점검)는 자동으로 끝까지 진행됩니다 (보통 30분~1시간)
+```powershell
+cd $HOME\Downloads
+irm https://raw.githubusercontent.com/Godorina/al-alloy-design/windows-support/install-wsl.ps1 -OutFile install-wsl.ps1
+powershell -ExecutionPolicy Bypass -File .\install-wsl.ps1          # 옵션 예: -User alloy -Yes
+```
 
-PowerShell 에서 직접 실행하려면: `powershell -ExecutionPolicy Bypass -File .\install-wsl.ps1`
+묻는 것은 이것뿐입니다: 관리자 권한 창(`예`), 재부팅(필요할 때만), 리눅스 사용자 이름과 비밀번호. 나머지(빌드, 모델 다운로드, 점검)는 자동으로 끝까지 진행됩니다 (보통 30분~1시간).
+(명령어 대신 ZIP 을 받았다면 압축을 푼 폴더의 `install.cmd` 를 실행해도 같습니다.)
 
 | 단계 | 하는 일 |
 |---|---|
@@ -52,8 +75,8 @@ PowerShell 에서 직접 실행하려면: `powershell -ExecutionPolicy Bypass -F
 
 - 끝나면 **요약**이 나옵니다: 계산 장치(실제로 GPU 를 잡았는지 `llama-server --list-devices` 로 확인), 모델, 모델 서버 상태.
 - 재부팅은 이번 실행에서 WSL 기능을 켰을 때만 합니다. Windows 업데이트 때문에 생긴 재부팅 대기는 건드리지 않습니다.
-- 이미 끝난 단계는 건너뛰므로 중간에 멈춰도 `install.cmd` 를 다시 실행하면 됩니다.
-- 실제 설치 위치는 WSL 안의 `~/al-alloy-design` 입니다 (Windows 폴더보다 훨씬 빠름). 받은 ZIP 폴더는 설치 뒤 지워도 됩니다. 로그: `%LOCALAPPDATA%\al-alloy-design\install-wsl.log`
+- 이미 끝난 단계는 건너뛰므로 중간에 멈춰도 같은 명령을 다시 실행하면 됩니다.
+- 실제 설치 위치는 WSL 안의 `~/al-alloy-design` 입니다 (Windows 폴더보다 훨씬 빠름). 받은 `install-wsl.ps1` 은 설치 뒤 지워도 됩니다. 로그: `%LOCALAPPDATA%\al-alloy-design\install-wsl.log`
 - 옵션: `-User 이름`, `-MemoryGB 20`, `-ModelRepo unsloth/Qwen3-14B-GGUF`, `-Quant Q4_K_M`, `-SkipBootstrap`(WSL 준비와 clone 까지만), `-Yes`(묻지 않음, 재부팅 포함)
 - 끝나면 시작 메뉴의 **Ubuntu** 를 열고 `cd ~/al-alloy-design` 후 3장으로 가세요. WSL 안에서는 `.venv\Scripts\python.exe` 대신 `.venv/bin/python`, `python` 대신 `python3` 입니다.
 
