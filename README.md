@@ -41,12 +41,12 @@ PowerShell 에서 직접 실행하려면: `powershell -ExecutionPolicy Bypass -F
 
 | 단계 | 하는 일 |
 |---|---|
-| 1. 사전 점검 | Windows 빌드(19041 이상), 가상화, 디스크, 메모리 |
+| 1. 사전 점검 | Windows 빌드(19041 이상), 가상화, 디스크, 메모리, **GPU** (NVIDIA + 드라이버면 GPU 로, 아니면 CPU 로 설치) |
 | 2. Windows 기능 | WSL, 가상 머신 플랫폼을 켭니다 (관리자 권한 창에서 `예`). 재부팅이 필요하면 `shutdown /r` 로 재부팅하고, 로그인하면 **자동으로 이어서** 실행됩니다 |
 | 3. 배포판 | Ubuntu 를 설치합니다 |
 | 4. 사용자 | 리눅스 계정을 만들고 기본 사용자로 지정합니다. **비밀번호만 직접 입력**합니다 |
 | 5. 메모리 | `%UserProfile%\.wslconfig` 의 `memory` 를 RAM 의 약 65% 로 맞춥니다 (WSL 기본값은 50%) |
-| 6. 프로젝트 | WSL 안에서 apt 패키지 → `git clone` (`~/al-alloy-design`) → `python3 bootstrap.py --yes` |
+| 6. 프로젝트 | WSL 안에서 apt 패키지 → `git clone` (`~/al-alloy-design`) → (NVIDIA 면) CUDA 빌드 도구 → `python3 bootstrap.py --yes` |
 
 - 이미 끝난 단계는 건너뛰므로 중간에 멈춰도 `install.cmd` 를 다시 실행하면 됩니다.
 - 실제 설치 위치는 WSL 안의 `~/al-alloy-design` 입니다 (Windows 폴더보다 훨씬 빠름). 받은 ZIP 폴더는 설치 뒤 지워도 됩니다. 로그: `%LOCALAPPDATA%\al-alloy-design\install-wsl.log`
@@ -100,7 +100,7 @@ python bootstrap.py --yes              # 묻지 않고 진행
 | 감지 | 동작 |
 |---|---|
 | 환경 (Windows / WSL1·2 / Linux / macOS) | 환경에 맞는 설치 방법을 고름 (winget / apt + 소스 빌드 / brew). WSL1 이면 경고, `/mnt/` 아래이면 느리다고 경고 |
-| NVIDIA GPU, VRAM | 있으면 VRAM 을, 없으면 메모리의 60% 를 "모델 예산"으로 계산. WSL/Linux 에서 `nvcc` 가 있으면 CUDA 로 빌드, 없으면 CPU 로 빌드하고 안내 |
+| NVIDIA GPU, VRAM | 있으면 VRAM 을, 없으면 메모리의 60% 를 "모델 예산"으로 계산. WSL 에서 `nvcc` 가 없으면 `scripts/install-cuda-wsl.sh` 로 NVIDIA 의 WSL 전용 저장소에서 빌드 도구만(nvcc, cuBLAS 약 1GB) 설치 — 드라이버는 설치하지 않음, 버전은 Windows 드라이버가 지원하는 범위에서 고름. 그다음 CUDA 로 빌드하고, 이미 CPU 로 빌드돼 있으면 다시 빌드. 일반 Linux 는 `nvcc` 가 있을 때만 CUDA. Intel/AMD 내장 GPU 는 쓰지 않음 (CPU) |
 | 메모리 | 예산이 24GB 이상이면 Qwen3.8-27B(약 15GB + 컨텍스트), 10~24GB 면 Qwen3-14B(`unsloth/Qwen3-14B-GGUF`, 약 9GB), 그보다 작으면 llmfit 이 이 PC 에 맞다고 고른 1순위 모델을 묻지 않고 받음 (직접 고르려면 `python llm/pick.py` 를 따로 실행). 모델 서버 동시 요청 수는 24GB 미만이면 1, 이상이면 2 (`--slots` 로 지정) |
 | 설치된 도구 | git, uv, llama-server, llmfit 중 없는 것만 설치. Windows 는 설치 후 PATH 갱신을 위해 새 PowerShell 에서 같은 명령을 다시 실행해야 함 |
 
@@ -265,6 +265,7 @@ LLM_TIMEOUT=7200                      # 답 하나를 기다리는 최대 초 (0
 | (WSL) 재부팅했는데 계속 "다시 시작하면 변경 사항이 적용됩니다" | 시작 메뉴의 `다시 시작` 이 기능 적용을 미룸 | PowerShell 에서 `shutdown /r /t 0`. `install-wsl.ps1` 은 이렇게 재부팅합니다 |
 | (WSL) `wsl` 명령이 아무 반응 없이 멈춤 | Ubuntu 첫 실행 화면(사용자 이름·동의 질문)이 입력을 기다리는 중 | 열린 Ubuntu 창에서 질문에 답하거나 창을 닫고 `wsl --shutdown`. `install-wsl.ps1` 은 첫 실행 화면을 끄고 계정을 직접 만듭니다 |
 | (WSL) apt 가 `Release file ... is not valid yet` | 미러의 Release 파일 날짜가 미래로 찍힘 (PC 시계 문제가 아님) | `sudo apt-get -o Acquire::Max-FutureTime=86400 update`. `bootstrap.py`, `install-wsl.ps1` 은 이 옵션을 씁니다 |
+| (WSL, NVIDIA) `CUDA 13.2 이상이 필요한데 ... 드라이버는 CUDA 13.x 까지만` | Windows 의 NVIDIA 드라이버가 오래됨. Ubuntu 26.04(glibc 2.43)는 CUDA 13.1 이하와 컴파일이 안 됨 | Windows 에서 NVIDIA 드라이버 업데이트 → `install.cmd` 다시 실행 (GPU 로 다시 빌드) |
 | (WSL) `python: command not found` | Ubuntu 에는 `python` 명령이 없음 | `python3 bootstrap.py` 로 실행 (설치 후에는 `.venv/bin/python`) |
 | (WSL) 모델이 메모리에 안 들어감, 서버가 죽음 | WSL 기본 메모리 상한이 RAM 의 50% | `%UserProfile%\.wslconfig` 에 `[wsl2]` / `memory=20GB` 후 `wsl --shutdown` |
 
@@ -292,6 +293,7 @@ data/alloy-properties/     강도 표(v1, v2, 논문 행), JSM·Tamura 2020 데�
 ontology/al_alloy/         al6xxx, alml 지식그래프(스키마, 규칙, 질의, build/kg.ttl)
 openwebui/, webui.sh       Open WebUI 연동 (선택, docs/webui.md)
 scripts/strip_quotes.py    KG 에서 논문 원문 인용을 제거하는 도구
+scripts/install-cuda-wsl.sh  WSL 에 CUDA 빌드 도구만 설치 (드라이버 없음, bootstrap.py / install-wsl.ps1 이 자동으로 씀)
 ```
 
 - 코드: MIT (`LICENSE`).

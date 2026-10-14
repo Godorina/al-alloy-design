@@ -17,6 +17,7 @@ import argparse
 import ctypes
 import os
 import platform
+import re
 import shlex
 import shutil
 import subprocess
@@ -91,9 +92,22 @@ def ram_gb(system: str) -> float:
     return 0.0
 
 
+def driver_cuda(out: str) -> str | None:
+    """Highest CUDA version the installed driver supports, from the `nvidia-smi` banner ("CUDA Version: 13.1")."""
+    m = re.search(r"CUDA Version:\s*([0-9]+\.[0-9]+)", out)
+    return m.group(1) if m else None
+
+
+def llama_has_cuda() -> bool | None:
+    """Whether ~/llama.cpp was configured with CUDA; None when it was never built here."""
+    cache = HOME / "llama.cpp" / "build" / "CMakeCache.txt"
+    return "GGML_CUDA:BOOL=ON" in cache.read_text(errors="replace") if cache.exists() else None
+
+
 def detect_gpu(system: str, machine: str, ram: float) -> dict[str, Any]:
     nvidia = parse_nvidia(sh(["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"]))
     if nvidia:
+        nvidia["cuda"] = driver_cuda(sh(["nvidia-smi"]))
         return nvidia
     if system == "Darwin" and machine == "arm64":
         return {"kind": "apple", "name": "Apple Silicon (통합 메모리)", "vram_gb": ram}
@@ -136,12 +150,22 @@ def tool_plan(env: dict[str, Any], rebuild_llama: bool) -> tuple[list[tuple[str,
     steps: list[tuple[str, list[str]]] = []
     notes: list[str] = []
 
+    nvidia = gpu["kind"] == "nvidia"
+    # WSL 에서는 NVIDIA 의 WSL 전용 저장소에서 빌드 도구만 받습니다 (scripts/install-cuda-wsl.sh: 드라이버 없음, 버전은 드라이버에 맞춤)
+    auto_cuda = nvidia and not tools["nvcc"] and kind == "wsl" and bool(tools["apt-get"])
     if kind in ("linux", "wsl"):
         missing = [pkg for pkg, binary in (("git", "git"), ("curl", "curl"), ("cmake", "cmake"), ("build-essential", "g++")) if not tools[binary]]
         if missing and tools["apt-get"]:
             steps.append((f"필수 패키지 설치 ({', '.join(missing)})", [f"sudo apt-get {APT_OPTS} update && sudo apt-get install -y {' '.join(missing)}"]))
         elif missing:
             notes.append(f"apt 가 없는 배포판입니다. 직접 설치하세요: {', '.join(missing)}")
+        if auto_cuda:
+            steps.append(("CUDA 빌드 도구 설치 (nvcc, cuBLAS 약 1GB, 드라이버는 설치하지 않음)", [
+                f"sudo bash scripts/install-cuda-wsl.sh {q(gpu.get('cuda') or '')}"
+                " || echo 'CUDA 도구를 설치하지 못해 CPU 로 빌드합니다. 위 안내를 확인하세요.'"]))
+        if nvidia and tools["llama-server"] and llama_has_cuda() is False:
+            rebuild_llama = True
+            notes.append("CPU 용으로 빌드된 llama.cpp 를 GPU(CUDA) 용으로 다시 빌드합니다.")
     if kind == "macos" and not tools["git"]:
         steps.append(("git 설치 (Xcode 명령줄 도구)", ["xcode-select --install"]))
     if kind == "windows" and not tools["git"]:
@@ -165,17 +189,20 @@ def tool_plan(env: dict[str, Any], rebuild_llama: bool) -> tuple[list[tuple[str,
             else:
                 notes.append("winget 이 없습니다. https://github.com/ggml-org/llama.cpp/releases 에서 Windows 빌드를 받아 PATH 에 넣으세요.")
         else:
-            use_cuda = gpu["kind"] == "nvidia" and bool(tools["nvcc"])
-            if gpu["kind"] == "nvidia" and not use_cuda:
+            use_cuda = nvidia and (bool(tools["nvcc"]) or auto_cuda)
+            if nvidia and not use_cuda:
                 notes.append("NVIDIA GPU 는 보이지만 CUDA toolkit(nvcc)이 없어 CPU 용으로 빌드합니다. CUDA toolkit 설치 후 `--rebuild-llama` 로 다시 실행하면 GPU 를 씁니다.")
-            if gpu["kind"] != "nvidia":
-                notes.append("GPU 가 감지되지 않아 CPU 용으로 빌드합니다 (큰 모델은 매우 느립니다)."
+            if not nvidia:
+                notes.append("NVIDIA GPU 가 감지되지 않아 CPU 용으로 빌드합니다 (큰 모델은 매우 느립니다)."
                              + (" WSL 에서 GPU 를 쓰려면 윈도우에 NVIDIA 드라이버를 설치하고 WSL 안에서 `nvidia-smi` 가 보이는지 확인하세요." if kind == "wsl" else ""))
             jobs = max(1, min(env["cpus"], int(env["ram_gb"] // 2) or 1))
             src, build = HOME / "llama.cpp", HOME / "llama.cpp" / "build"
-            steps.append((f"llama.cpp 빌드 ({'CUDA' if use_cuda else 'CPU'}, 수 분 걸립니다)", [
+            # CUDA 는 실행 시점에 nvcc 가 실제로 있을 때만 켭니다: 위의 CUDA 설치가 실패하면 CPU 빌드로 이어집니다
+            cuda_flags = (' $(NVCC=$(command -v nvcc || echo /usr/local/cuda/bin/nvcc); '
+                          '[ -x "$NVCC" ] && echo "-DGGML_CUDA=ON -DCMAKE_CUDA_COMPILER=$NVCC" || echo "-DGGML_CUDA=OFF")') if use_cuda else ""
+            steps.append((f"llama.cpp 빌드 ({'CUDA, 10~30분' if use_cuda else 'CPU, 수 분'} 걸립니다)", [
                 f"if [ -d {q(src / '.git')} ]; then git -C {q(src)} pull --ff-only; else git clone --depth 1 https://github.com/ggml-org/llama.cpp {q(src)}; fi",
-                f"cmake -S {q(src)} -B {q(build)} -DLLAMA_CURL=OFF" + (" -DGGML_CUDA=ON" if use_cuda else ""),
+                f"cmake -S {q(src)} -B {q(build)} -DLLAMA_CURL=OFF" + cuda_flags,
                 f"cmake --build {q(build)} --config Release -j {jobs} --target llama-server",
                 f"mkdir -p {q(HOME / '.local' / 'bin')} && ln -sf {q(build / 'bin' / 'llama-server')} {q(HOME / '.local' / 'bin' / 'llama-server')}",
             ]))
@@ -232,6 +259,7 @@ def show_detection(env: dict[str, Any]) -> None:
     label = {"macos": "macOS", "windows": "Windows (네이티브)", "linux": "Linux",
              "wsl": f"WSL{env['wsl']} 의 Linux"}[env["kind"]]
     vram = f", VRAM {gpu['vram_gb']}GB" if gpu.get("vram_gb") and gpu["kind"] == "nvidia" else ""
+    vram += f", 드라이버 CUDA {gpu['cuda']}" if gpu.get("cuda") else ""
     print("감지 결과")
     print(f"  환경      {label} ({env['machine']})")
     print(f"  메모리    {env['ram_gb']}GB" + (" (WSL 에 할당된 양)" if env["kind"] == "wsl" else ""))
