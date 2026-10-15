@@ -124,6 +124,7 @@ powershell -ExecutionPolicy Bypass -File .\install-wsl.ps1
 | `-MemoryGB 20` | WSL 이 쓸 메모리 상한 (기본: PC 메모리의 약 65%) |
 | `-ModelRepo unsloth/Qwen3-14B-GGUF` | 모델을 직접 지정 (기본: GPU/메모리에 맞춰 자동) |
 | `-SkipBootstrap` | WSL 준비와 저장소 받기까지만 |
+| `-NoExisting` | Ollama, LM Studio 등으로 이미 받아 둔 모델을 쓰지 않고 새로 다운로드 |
 
 진행 중에 보이는 것과 할 일:
 
@@ -139,6 +140,8 @@ powershell -ExecutionPolicy Bypass -File .\install-wsl.ps1
 | [5] WSL 메모리 | `.wslconfig 에 memory=20GB 를 썼습니다` | 없음 |
 | [6] 설치 (WSL 안) | apt, git clone, (NVIDIA 면) CUDA 빌드 도구, `bootstrap.py` | 기다리기 (가장 오래 걸림) |
 | [요약] | 계산 장치, 모델, 모델 서버 | 결과 확인 (2.3) |
+
+Windows 에 Ollama 나 LM Studio 로 받아 둔 모델(7B 이상, 도구 호출 지원)이 있으면 [6] 단계에서 그 파일을 WSL 안으로 한 번 복사해 쓰고, 다운로드는 건너뜁니다 (README 2.2 "이미 있는 모델 쓰기"). 새로 받고 싶으면 `-NoExisting` 을 붙이세요.
 
 중간에 멈추거나 창을 닫았으면 **같은 명령을 다시 실행**하세요. 끝난 단계는 건너뜁니다.
 
