@@ -31,6 +31,7 @@ param(
     [string]$Branch = "windows-support",
     [string]$Dir = "al-alloy-design",   # 리눅스 홈 아래 폴더 이름
     [switch]$SkipBootstrap,             # WSL 준비와 clone 까지만 하고 bootstrap.py 는 감지만
+    [switch]$NoExisting,                # 이 PC 에 이미 있는 모델(Ollama, LM Studio 등)을 쓰지 않고 새로 다운로드
     [switch]$Yes,                       # 확인 질문 생략 (재부팅 확인 포함)
     [switch]$Resume                     # 재부팅 후 자동 실행용 (저장해 둔 옵션을 불러옴)
 )
@@ -43,7 +44,7 @@ $StateDir = Join-Path $env:LOCALAPPDATA "al-alloy-design"
 $StateFile = Join-Path $StateDir "install-wsl.json"
 $LogFile = Join-Path $StateDir "install-wsl.log"
 $LxssKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss"
-$OptionNames = "User", "Distro", "MemoryGB", "ModelRepo", "Quant", "RepoUrl", "Branch", "Dir", "SkipBootstrap", "Yes"
+$OptionNames = "User", "Distro", "MemoryGB", "ModelRepo", "Quant", "RepoUrl", "Branch", "Dir", "SkipBootstrap", "NoExisting", "Yes"
 New-Item -ItemType Directory -Force $StateDir | Out-Null
 
 if ($Resume -and (Test-Path $StateFile)) {
@@ -404,6 +405,15 @@ if ($Gpu.Mode -eq "cuda") {
 
 $bootArgs = @("--yes")
 if ($ModelRepo) { $bootArgs += @("--repo", $ModelRepo, "--quant", $Quant) }
+if ($NoExisting) { $bootArgs += "--no-existing" }
+# 이미 받아 둔 모델: bootstrap.py 가 WSL 안과 Windows 쪽(C:\Users\*\.ollama, .lmstudio 등)을 찾아 쓰고,
+# Ollama 모델 폴더를 옮겨 둔 경우(OLLAMA_MODELS)만 여기서 알려 줍니다
+$ollamaDir = [Environment]::GetEnvironmentVariable("OLLAMA_MODELS", "User")
+if (-not $ollamaDir) { $ollamaDir = [Environment]::GetEnvironmentVariable("OLLAMA_MODELS", "Machine") }
+if ($ollamaDir -and (Test-Path $ollamaDir)) {
+    $wslOllama = Get-WslOutput -AllowFail -Cmd @("wslpath", "-u", $ollamaDir.Replace("\", "/"))
+    if ($wslOllama) { $bootArgs += @("--search", "$wslOllama".Trim()) }
+}
 if ($SkipBootstrap) { $bootArgs = @("--detect-only") }
 if ($Gpu.Mode -eq "cpu-forced") { $bootArgs += "--cpu" }   # NVIDIA 가 있어도 CPU 로: 중간에 CUDA 설치·sudo 를 다시 시도하지 않게
 Write-Info "python3 bootstrap.py $($bootArgs -join ' ')"

@@ -77,7 +77,7 @@ powershell -ExecutionPolicy Bypass -File .\install-wsl.ps1          # 옵션 예
 - 재부팅은 이번 실행에서 WSL 기능을 켰을 때만 합니다. Windows 업데이트 때문에 생긴 재부팅 대기는 건드리지 않습니다.
 - 이미 끝난 단계는 건너뛰므로 중간에 멈춰도 같은 명령을 다시 실행하면 됩니다.
 - 실제 설치 위치는 WSL 안의 `~/al-alloy-design` 입니다 (Windows 폴더보다 훨씬 빠름). 받은 `install-wsl.ps1` 은 설치 뒤 지워도 됩니다. 로그: `%LOCALAPPDATA%\al-alloy-design\install-wsl.log`
-- 옵션: `-User 이름`, `-MemoryGB 20`, `-ModelRepo unsloth/Qwen3-14B-GGUF`, `-Quant Q4_K_M`, `-SkipBootstrap`(WSL 준비와 clone 까지만), `-Yes`(묻지 않음, 재부팅 포함)
+- 옵션: `-User 이름`, `-MemoryGB 20`, `-ModelRepo unsloth/Qwen3-14B-GGUF`, `-Quant Q4_K_M`, `-SkipBootstrap`(WSL 준비와 clone 까지만), `-NoExisting`(이미 있는 모델을 쓰지 않고 새로 다운로드), `-Yes`(묻지 않음, 재부팅 포함)
 - 끝나면 시작 메뉴의 **Ubuntu** 를 열고 `cd ~/al-alloy-design` 후 3장으로 가세요. WSL 안에서는 `.venv\Scripts\python.exe` 대신 `.venv/bin/python`, `python` 대신 `python3` 입니다.
 
 ### 1.1 도구 설치
@@ -120,6 +120,7 @@ cd al-alloy-design
 python bootstrap.py                    # Windows 에 python 이 없으면: winget install astral-sh.uv 후 uv run bootstrap.py
 python bootstrap.py --detect-only      # 감지 결과만 보기
 python bootstrap.py --yes              # 묻지 않고 진행
+python bootstrap.py --no-existing      # 이미 있는 모델(Ollama 등)을 쓰지 않고 새로 다운로드
 ```
 
 감지하는 것과 그에 따른 동작:
@@ -129,6 +130,7 @@ python bootstrap.py --yes              # 묻지 않고 진행
 | 환경 (Windows / WSL1·2 / Linux / macOS) | 환경에 맞는 설치 방법을 고름 (winget / apt + 소스 빌드 / brew). WSL1 이면 경고, `/mnt/` 아래이면 느리다고 경고 |
 | NVIDIA GPU, VRAM | 있으면 VRAM 을, 없으면 메모리의 60% 를 "모델 예산"으로 계산. WSL 에서 `nvcc` 가 없으면 `scripts/install-cuda-wsl.sh` 로 NVIDIA 의 WSL 전용 저장소에서 빌드 도구만(nvcc, cuBLAS 약 1GB) 설치 — 드라이버는 설치하지 않음, 버전은 Windows 드라이버가 지원하는 범위에서 고름. 그다음 CUDA 로 빌드하고, 이미 CPU 로 빌드돼 있으면 다시 빌드. 일반 Linux 는 `nvcc` 가 있을 때만 CUDA. Intel/AMD 내장 GPU 는 쓰지 않음 (CPU) |
 | 메모리 | 예산이 24GB 이상이면 Qwen3.8-27B(약 15GB + 컨텍스트), 10~24GB 면 Qwen3-14B(`unsloth/Qwen3-14B-GGUF`, 약 9GB), 그보다 작으면 llmfit 이 이 PC 에 맞다고 고른 1순위 모델을 묻지 않고 받음 (직접 고르려면 `python llm/pick.py` 를 따로 실행). 모델 서버 동시 요청 수는 24GB 미만이면 1, 이상이면 2 (`--slots` 로 지정) |
+| 이미 받아 둔 모델 | Ollama, LM Studio, Hugging Face/llama.cpp 캐시의 GGUF 파일을 찾습니다 (WSL 이면 Windows 쪽 `C:\Users\*` 도). 도구 호출 템플릿이 있고 7B 이상이며 모델 예산에 들어가는 것이 있으면 **다운로드 대신 그 파일을 이 프로젝트의 llama-server 로 실행** (아래 "이미 있는 모델 쓰기") |
 | 설치된 도구 | git, uv, llama-server, llmfit 중 없는 것만 설치. Windows 는 설치 후 PATH 갱신을 위해 새 PowerShell 에서 같은 명령을 다시 실행해야 함 |
 
 모델을 직접 지정하려면 옵션을 그대로 붙입니다 (나머지 옵션은 `llm/pick.py` 로 전달됩니다).
@@ -145,6 +147,22 @@ python bootstrap.py --repo unsloth/Qwen3.8-27B-GGUF --quant Q4_K_M
 ```powershell
 python bootstrap.py --quant Q4_K_M       # llmfit 순위에서 번호 선택 (예: Qwen3-4B)
 ```
+
+#### 이미 있는 모델 쓰기
+
+Ollama, LM Studio 등으로 받아 둔 모델이 있으면 `bootstrap.py` 가 감지 결과 아래에 보여 줍니다.
+
+```
+  기존 모델 3개 발견, 그중 쓸 수 있는 것 1개
+    O qwen3:14b (Ollama, 14B Q4_K_M, 8.6GB)
+    - llama3.2:3b (Ollama, 3B Q4_K_M, 1.9GB)  [너무 작음 (약 3B, 7B 이상 필요)]
+```
+
+- 쓸 수 있는(`O`) 모델이 있으면 번호를 묻고(`--yes` 면 가장 큰 것), 다운로드 대신 그 파일을 씁니다. `0` 을 고르거나 `--no-existing` 을 붙이면 원래대로 권장 모델을 받습니다.
+- Ollama/LM Studio 서버에 접속하는 것이 아니라 **모델 파일만** 빌려 와서 이 프로젝트의 llama-server 로 켭니다. 그래서 컨텍스트 길이, 도구 호출 형식, 생각(thinking) 끄기 설정이 권장 모델과 같게 적용됩니다. Ollama 가 같은 모델을 켜 두고 있으면 메모리를 두 배로 쓰니 `ollama stop 이름` 으로 내려 두세요.
+- WSL 에서 Windows 쪽 모델을 쓸 때는 한 번 `models/` 로 복사합니다 (Windows 드라이브에서 직접 읽으면 켤 때마다 매우 느림).
+- 그 파일로 서버가 켜지지 않으면(일부 Ollama 전용 형식) 자동으로 권장 모델을 받아서 다시 켭니다.
+- 이미 모델을 골라 둔 경우(`.llm/selection.json` 이 있음)나 `--repo` 등으로 직접 지정한 경우에는 찾지 않습니다. 다른 폴더도 찾으려면 `--search 폴더`, 찾은 목록만 보려면 `python llm/existing.py`.
 
 실행되는 일은 4단계입니다. `--repo` 없이 실행하면 중간에 "Download which one? [1]" 이 나오고, 순위표의 번호를 입력합니다.
 
@@ -169,6 +187,8 @@ uv pip install --python .venv\Scripts\python.exe -r requirements.txt
 .venv\Scripts\python.exe llm/pick.py --quant Q4_K_M         # 번호를 골라 다운로드
 .venv\Scripts\python.exe llm/pick.py --auto --quant Q4_K_M  # 묻지 않고 1순위 다운로드 (1순위는 큰 모델일 수 있으니 순위부터 확인)
 .venv\Scripts\python.exe llm/pick.py --repo unsloth/Qwen3.8-27B-GGUF --quant Q4_K_M   # 권장: Qwen3.8-27B 직접 지정 (약 15GB)
+.venv\Scripts\python.exe llm/existing.py                    # 이 PC 에 이미 있는 모델 찾기 (Ollama, LM Studio 등)
+.venv\Scripts\python.exe llm/pick.py --gguf 파일경로          # 다운로드 대신 이미 있는 GGUF 파일 쓰기 (--copy: models/ 로 복사)
 
 # (3) 모델 서버 켜기 (.env 가 자동으로 만들어짐)
 .venv\Scripts\python.exe llm/serve.py start
@@ -178,7 +198,7 @@ uv pip install --python .venv\Scripts\python.exe -r requirements.txt
 .venv\Scripts\python.exe llm/selfcheck.py --agent           # 설계 전체 한 번 실행 (5~10분)
 ```
 
-`pick.py` 옵션: `--list-only`(순위만), `--auto`(1순위), `--quant Q4_K_M`(양자화 지정), `--top 8`(표시 개수), `--repo 저장소`(llmfit 순위에 없는 모델을 직접 지정, `--quant` 필요).
+`pick.py` 옵션: `--list-only`(순위만), `--auto`(1순위), `--quant Q4_K_M`(양자화 지정), `--top 8`(표시 개수), `--repo 저장소`(llmfit 순위에 없는 모델을 직접 지정, `--quant` 필요), `--gguf 파일경로`(이미 있는 파일 사용, `--copy` 로 `models/` 에 복사).
 `serve.py start` 옵션: `--slots 2`(동시 요청 수), `--ctx-per-slot 49152`(슬롯당 컨텍스트), `--port 8080`, `--wait 300`(대기 초).
 
 ### 2.4 점검 결과 읽는 법
@@ -264,7 +284,7 @@ uv pip install --python .venv\Scripts\python.exe -r requirements.txt
 
 ### 다른 서버(Ollama, LM Studio 등) 쓰기
 
-OpenAI 호환 서버면 됩니다. `.env` 를 직접 고치세요 (끝에 `/v1` 을 붙이지 않습니다).
+Ollama, LM Studio 의 **모델 파일**을 이 프로젝트 서버로 쓰는 것은 `bootstrap.py` 가 자동으로 합니다 (2.2 "이미 있는 모델 쓰기"). 그 서버 자체에 붙이려면 OpenAI 호환 서버면 됩니다 (이때 컨텍스트 길이 49152 이상과 생각(thinking) 끄기는 그 서버에서 직접 설정해야 합니다). `.env` 를 직접 고치세요 (끝에 `/v1` 을 붙이지 않습니다).
 
 ```
 LLM_BASE_URL=http://127.0.0.1:11434   # Ollama 예시
@@ -312,7 +332,7 @@ install.cmd                Windows: 더블클릭하면 install-wsl.ps1 실행
 install-wsl.ps1            Windows: WSL2 + Ubuntu 를 만들고 그 안에서 bootstrap.py 까지 실행
 bootstrap.py               환경 감지 + 한 번에 설치 (setup.sh 는 macOS/Linux 용 간단판)
 design.py                  설계 실행 (CLI)
-llm/                       pick.py(모델 추천·다운로드), serve.py(서버), selfcheck.py(품질 점검)
+llm/                       pick.py(모델 추천·다운로드), existing.py(이미 있는 모델 찾기), serve.py(서버), selfcheck.py(품질 점검)
 src/mcp/host/              모델 ↔ 스킬 ↔ KG 도구를 잇는 에이전트 루프
 src/mcp/servers/kg/        지식그래프 MCP 서버
 src/skills/                alloy-properties(다물성 설계), alloy-strength(ICL 강도 엔진, ML 모델)
